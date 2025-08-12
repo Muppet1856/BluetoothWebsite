@@ -1,7 +1,5 @@
 // static/script.js
 // Version 1.0
-// Authored by Jeff Zellen
-
 // --- Element refs ---
 const scanToggle   = document.getElementById('scanToggle');
 const scanText     = document.getElementById('scanText');

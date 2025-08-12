@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # app.py
 # Version 1.0
-# Authored by Jeff Zellen
-
 import os, re, time, atexit, subprocess
 from flask import Flask, jsonify, request, render_template
 

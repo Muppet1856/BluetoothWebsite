@@ -1,7 +1,5 @@
 # /etc/systemd/system/bt-web.service
 # Version 1.0
-# Authored by Jeff Zellen
-
 [Unit]
 Description=Bluetooth Web UI
 After=network.target bluetooth.target
