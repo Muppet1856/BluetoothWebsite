@@ -374,3 +374,30 @@ def index():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
     app.run(host="0.0.0.0", port=port)
+
+@app.post("/github-webhook")
+def github_webhook():
+    import hmac, hashlib
+
+    # Optional: Verify secret to ensure authenticity
+    secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    payload = request.data
+    signature = request.headers.get("X-Hub-Signature-256")
+
+    if secret and signature:
+        sha_name, signature = signature.split('=')
+        mac = hmac.new(secret.encode(), msg=payload, digestmod=hashlib.sha256)
+        if not hmac.compare_digest(mac.hexdigest(), signature):
+            return jsonify({"ok": False, "error": "Invalid signature"}), 403
+
+    # Parse JSON payload
+    data = request.get_json(force=True)
+    event_type = request.headers.get("X-GitHub-Event")
+    print(f"Received GitHub event: {event_type}")
+    print(data)
+
+    # Example: trigger a pull to update repo
+    if event_type == "push":
+        subprocess.run(["git", "-C", "/path/to/your/project", "pull"])
+
+    return jsonify({"ok": True})
