@@ -9,8 +9,7 @@ Open it from any browser on your LAN.
 
 - Hardware: **Raspberry Pi Zero 2 W**
 - OS: **Debian GNU/Linux 12 (Bookworm) – aarch64**
-- Kernel: **6.12.41‑v8+**
-- Hostname: **`airplay.zellen`**
+- Kernel: **6.12.41-v8+**
 - Bluetooth: **BlueZ 5.x**
 - Audio: **bluez-alsa-utils** (modern replacement for `bluealsa`)
 
@@ -68,7 +67,7 @@ python3 /opt/bt-web/app.py
 Then in a browser on your network:
 
 ```
-http://airplay.zellen:8080/
+http://<Host IP>:8080/
 ```
 
 Press **Scan On**, put your speaker in pairing mode, select it, then **Connect**.
@@ -114,7 +113,7 @@ sudo systemctl status bt-web --no-pager
 Open the app at:
 
 ```
-http://airplay.zellen:8080/
+http://<Host IP>:8080/
 ```
 
 ---
@@ -128,7 +127,7 @@ Once **Connected** to your speaker, play the test sound:
 aplay -L | grep -A2 bluealsa
 
 # Use your speaker's MAC in DEV=
-aplay -D bluealsa:DEV=<Bose-MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Center.wav
+aplay -D bluealsa:DEV=<Speaker-MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Center.wav
 ```
 
 ---
@@ -141,7 +140,7 @@ aplay -D bluealsa:DEV=<Bose-MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Cente
   2) Stop scanning
   3) Trust the device (skipped if already trusted)
   4) **Connect while holding a live `bluetoothctl` session** until the link is confirmed
-- The UI uses **Bootstrap** and renders logs client‑side with **ansi‑to‑html**.
+- The UI uses **Bootstrap** and renders logs client-side with **ansi-to-html**.
 - “Audio only” filter shows likely audio devices (A2DP/AVRCP UUIDs or common brand hints).
 
 ---
@@ -181,11 +180,11 @@ sudo systemctl start bluetooth
 
 ## Security / Network
 
-- The app binds to `0.0.0.0:8080` (LAN‑only typical).  
+- The app binds to `0.0.0.0:8080` (LAN-only typical).  
   If you expose it beyond your LAN, put it behind a reverse proxy with auth.
 
 ---
 
 ## License
 
-MIT
+TBD
