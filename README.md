@@ -1,6 +1,6 @@
 # Bluetooth Control Web UI (Raspberry Pi Zero 2 W · Debian 12)
 
-A small Flask + Bootstrap web app to scan, pair, trust, connect, disconnect, and forget Bluetooth devices — optimized for **audio** (A2DP/AVRCP via BlueZ + BlueALSA).  
+A small Flask + Bootstrap web app to scan, pair, trust, connect, disconnect, and forget Bluetooth devices — optimized for **audio** (A2DP/AVRCP via BlueZ + BlueALSA).
 Open it from any browser on your LAN.
 
 ---
