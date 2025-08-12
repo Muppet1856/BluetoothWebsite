@@ -1,4 +1,4 @@
-// static/scripts.js
+// static/script.js
 // Version 1.0
 // Authored by Jeff Zellen
 
