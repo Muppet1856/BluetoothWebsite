@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- templates/index.html -->
+<!-- Version 1.0 -->
+<!-- Authored by Jeff Zellen -->
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Bluetooth Controller</title>
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <!-- App styles -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-body">
+  <div class="container py-4">
+    <!-- Top controls -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h1 class="h4 mb-0">Bluetooth Controller</h1>
+      <div class="d-flex gap-2">
+        <button id="scanToggle" class="btn btn-primary">
+          <span class="me-2" aria-hidden="true">🔎</span><span id="scanText">Scan On</span>
+        </button>
+        <div class="form-check form-switch align-self-center">
+          <input class="form-check-input" type="checkbox" role="switch" id="audioOnly" checked>
+          <label class="form-check-label" for="audioOnly">Audio only</label>
+        </div>
+        <button id="refreshBtn" class="btn btn-outline-secondary">Refresh</button>
+      </div>
+    </div>
+
+    <!-- Row 1: Devices + Actions -->
+    <div class="row g-3">
+      <!-- Devices -->
+      <div class="col-12 col-lg-7">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <strong>Devices</strong>
+              <span id="count" class="badge text-bg-secondary ms-2">0</span>
+            </div>
+            <small class="text-secondary" id="scanMsg">Idle</small>
+          </div>
+          <div id="deviceList" class="list-group list-group-flush" style="max-height:24rem; overflow:auto;">
+            <!-- populated by script.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions & status -->
+      <div class="col-12 col-lg-5">
+        <div class="card shadow-sm">
+          <div class="card-header"><strong>Actions</strong></div>
+          <div class="card-body d-grid gap-2">
+            <div id="statusArea" class="mb-2">
+              <!-- badges rendered by script.js -->
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-success flex-fill" id="connectBtn" disabled>Connect</button>
+              <button class="btn btn-warning flex-fill" id="disconnectBtn" disabled>Disconnect</button>
+              <button class="btn btn-danger flex-fill" id="forgetBtn" disabled>Forget</button>
+            </div>
+            <div class="small text-secondary">
+              Connect will: <em>pair (while scanning)</em> → <em>stop scan</em> → <em>trust</em> → <em>connect</em>.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Full-width Log -->
+    <div class="row g-3 mt-1">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Log</strong>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary" id="copyLogBtn" title="Copy log to clipboard">Copy</button>
+              <button class="btn btn-sm btn-outline-secondary" id="clearLogBtn">Clear</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <pre id="logBox" class="mb-0"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS deps -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- ANSI → HTML renderer -->
+  <script src="https://cdn.jsdelivr.net/npm/ansi-to-html@0.7.2/lib/ansi_to_html.min.js"></script>
+  <!-- App script -->
+  <script src="/static/script.js"></script>
+</body>
+</html>

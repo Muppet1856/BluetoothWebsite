@@ -1,0 +1,18 @@
+# /etc/systemd/system/bt-web.service
+# Version 1.0
+# Authored by Jeff Zellen
+
+[Unit]
+Description=Bluetooth Web UI
+After=network.target bluetooth.target
+
+[Service]
+ExecStart=/opt/bt-web/venv/bin/python /opt/bt-web/app.py
+WorkingDirectory=/opt/bt-web
+Restart=always
+User=pi
+Environment=PYTHONUNBUFFERED=1
+Environment=PORT=8080
+
+[Install]
+WantedBy=multi-user.target

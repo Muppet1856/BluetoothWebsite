@@ -1,0 +1,45 @@
+/* static/style.css */
+/* Version 1.0 */
+/* Authored by Jeff Zellen */
+
+
+/* Ensure log box takes full width and is fixed-height with scroll */
+#logBox {
+    background-color: #000;
+    color: #fff;
+    font-family: monospace, monospace;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    height: 300px;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+/* Ensure MAC address is readable when row is active */
+.list-group-item.active .mac {
+    color: #e5e7eb !important; /* light gray */
+    opacity: 0.95;
+}
+
+/* Keep device name + MAC aligned nicely */
+.mac {
+    font-size: 0.8rem;
+}
+
+/* Scan status message */
+#scanMsg {
+    font-size: 0.85rem;
+    color: #6c757d; /* Bootstrap secondary text */
+}
+
+/* Slight padding for buttons in card footers */
+.card-footer .btn {
+    margin-right: 0.5rem;
+}
+
+/* Ensure badges have consistent spacing */
+.badge {
+    margin-right: 0.25rem;
+}
