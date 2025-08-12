@@ -7,9 +7,9 @@ Description=Bluetooth Web UI
 After=network.target bluetooth.target
 
 [Service]
-ExecStart=/opt/bt-web/venv/bin/python /opt/bt-web/app.py
+ExecStart=/usr/bin/python3 /opt/bt-web/app.py
 WorkingDirectory=/opt/bt-web
-Restart=always
+Restart=on-failure
 User=pi
 Environment=PYTHONUNBUFFERED=1
 Environment=PORT=8080
