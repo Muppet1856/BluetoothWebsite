@@ -34,8 +34,8 @@ ADAPTER_CACHE = {"mac": None, "ts": 0.0}
 
 # ------------------ Utilities ------------------
 def clean_for_js(text: str) -> str:
-    """Keep printable, plus newline and tab. (Client will render ANSI with ansi-to-html.)"""
-    return "".join(ch for ch in text if ch in ("\n", "\t") or ord(ch) >= 0x20)
+    """Keep printable characters plus newline, tab, and ESC for ANSI color codes."""
+    return "".join(ch for ch in text if ch in ("\n", "\t", "\x1b") or ord(ch) >= 0x20)
 
 def _get_adapter_mac(timeout=10):
     now = time.time()
