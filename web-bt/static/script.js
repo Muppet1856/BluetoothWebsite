@@ -9,6 +9,7 @@ const statusArea   = document.getElementById('statusArea');
 const connectBtn   = document.getElementById('connectBtn');
 const disconnectBtn= document.getElementById('disconnectBtn');
 const forgetBtn    = document.getElementById('forgetBtn');
+const testAudioBtn = document.getElementById('testAudioBtn');
 const refreshBtn   = document.getElementById('refreshBtn');
 const clearLogBtn  = document.getElementById('clearLogBtn');
 const copyLogBtn   = document.getElementById('copyLogBtn');
@@ -46,7 +47,7 @@ function deviceStateBadge(d) {
 function renderStatus(info) {
   if (!info) {
     statusArea.innerHTML = '<span class="text-secondary">No device selected.</span>';
-    connectBtn.disabled = true; disconnectBtn.disabled = true; forgetBtn.disabled = true;
+    connectBtn.disabled = true; disconnectBtn.disabled = true; forgetBtn.disabled = true; testAudioBtn.disabled = true;
     return;
   }
   statusArea.innerHTML =
@@ -54,6 +55,7 @@ function renderStatus(info) {
   connectBtn.disabled    = info.connected || !selectedMac;
   disconnectBtn.disabled = !info.connected || !selectedMac;
   forgetBtn.disabled     = !selectedMac;
+  testAudioBtn.disabled  = !info.connected;
 }
 
 function renderList() {
@@ -197,6 +199,22 @@ forgetBtn.addEventListener('click', async () => {
   selectedMac = devices[0]?.mac || "";
   await refreshDeviceInfo();
   forgetBtn.disabled = false;
+});
+
+testAudioBtn.addEventListener('click', async () => {
+  testAudioBtn.disabled = true;
+  try {
+    const res = await fetch('/api/test_audio', { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) {
+      showLogRAW(data.log || "");
+      alert('Audio test failed');
+    }
+  } catch (e) {
+    showLogRAW(String(e));
+    alert('Audio test failed');
+  }
+  await refreshDeviceInfo();
 });
 
 refreshBtn.addEventListener('click', async () => {
