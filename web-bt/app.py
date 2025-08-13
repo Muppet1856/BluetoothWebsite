@@ -272,8 +272,12 @@ def bctl_connect_wait(mac, wait_s=8):
 # ------------------ API ------------------
 @app.post("/api/scan_on")
 def api_scan_on():
+    try:
+        _start_persistent_scan()
+    except Exception as e:
+        SCAN_STATE["wanted"] = False
+        return jsonify({"ok": False, "status": {}, "log": clean_for_js(str(e))}), 500
     SCAN_STATE["wanted"] = True
-    _start_persistent_scan()
     time.sleep(0.5)
     return jsonify({"ok": True, "status": adapter_status(), "log": ""})
 
