@@ -394,9 +394,6 @@ def github_webhook():
     sig_hdr = request.headers.get("X-Hub-Signature-256", "")
     event   = request.headers.get("X-GitHub-Event", "unknown")
 
-    if event == "ping":
-        return jsonify({"ok": True, "event": "ping"})  # no HMAC for ping
-
     if secret:
         try:
             _, sent = sig_hdr.split("=", 1)
@@ -405,6 +402,9 @@ def github_webhook():
         calc = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
         if not hmac.compare_digest(calc, sent):
             return jsonify({"ok": False, "err": "bad signature"}), 403
+
+    if event == "ping":
+        return jsonify({"ok": True, "event": "ping"})  # no HMAC for ping
 
     # handle push...
     return jsonify({"ok": True, "event": event})
