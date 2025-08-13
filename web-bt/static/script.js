@@ -129,7 +129,12 @@ scanToggle.addEventListener('click', async () => {
   scanToggle.disabled = true;
   try {
     const turningOn = scanText.textContent.includes("On");
-    await fetch(turningOn ? '/api/scan_on' : '/api/scan_off', { method: 'POST' });
+    const res = await fetch(turningOn ? '/api/scan_on' : '/api/scan_off', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showLogRAW(data.log || 'Scan toggle failed');
+      alert('Scan toggle failed');
+    }
     await updateScanUI();
   } finally {
     scanToggle.disabled = false;

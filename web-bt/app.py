@@ -235,8 +235,12 @@ def bctl_connect_wait(mac, wait_s=8):
 # ------------------ API ------------------
 @app.post("/api/scan_on")
 def api_scan_on():
+    try:
+        _start_persistent_scan()
+    except Exception as e:
+        SCAN_STATE["wanted"] = False
+        return jsonify({"ok": False, "status": {}, "log": clean_for_js(str(e))}), 500
     SCAN_STATE["wanted"] = True
-    _start_persistent_scan()
     time.sleep(0.5)
     return jsonify({"ok": True, "status": adapter_status(), "log": ""})
 
@@ -345,6 +349,32 @@ def api_forget():
 def index():
     return render_template("index.html")
 
+<<<<<<< HEAD
+=======
+@app.post("/github-webhook")
+def github_webhook():
+    import hmac, hashlib, os
+    secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+    payload = request.get_data(cache=False)
+    sig_hdr = request.headers.get("X-Hub-Signature-256", "")
+    event   = request.headers.get("X-GitHub-Event", "unknown")
+
+    if secret:
+        try:
+            _, sent = sig_hdr.split("=", 1)
+        except Exception:
+            return jsonify({"ok": False, "err": "missing/invalid signature"}), 403
+        calc = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calc, sent):
+            return jsonify({"ok": False, "err": "bad signature"}), 403
+
+    if event == "ping":
+        return jsonify({"ok": True, "event": "ping"})  # no HMAC for ping
+
+    # handle push...
+    return jsonify({"ok": True, "event": event})
+
+>>>>>>> fc1523f3887bd94ae3b12ded4a3faa41674bc436
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
     app.run(host="0.0.0.0", port=port)
