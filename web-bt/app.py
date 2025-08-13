@@ -2,11 +2,22 @@
 # app.py
 # Version 1.0
 import os, re, time, atexit, subprocess
+from html import escape
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
 
-# ------------------ Hints for audio devices ------------------
+# ---------- Regex & constants ----------
+DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17}) (.+)$")
+BOOL_LINE = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
+ADAPTER_BOOL = re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|no)$", re.I)
+ANSI_SGR = re.compile(r"\x1b\[[0-9;]*m")
+# CSI sequences that are NOT SGR (m). We remove these entirely.
+NON_SGR_CSI = re.compile(
+    r"\x1b\[[0-9;?]*[A-HJKSTfP]|\x1b\[K|\x1b\[\d+P",
+    re.MULTILINE
+)
+
 AUDIO_UUID_HINTS = (
     "0000110b",  # A2DP Sink
     "0000110a",  # A2DP Source
@@ -377,27 +388,27 @@ if __name__ == "__main__":
 
 @app.post("/github-webhook")
 def github_webhook():
-    import hmac, hashlib
-
-    # Optional: Verify secret to ensure authenticity
+    import hmac, hashlib, os
     secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
-    payload = request.data
-    signature = request.headers.get("X-Hub-Signature-256")
+    payload = request.get_data(cache=False)
+    sig_hdr = request.headers.get("X-Hub-Signature-256", "")
+    event   = request.headers.get("X-GitHub-Event", "unknown")
 
-    if secret and signature:
-        sha_name, signature = signature.split('=')
-        mac = hmac.new(secret.encode(), msg=payload, digestmod=hashlib.sha256)
-        if not hmac.compare_digest(mac.hexdigest(), signature):
-            return jsonify({"ok": False, "error": "Invalid signature"}), 403
+    if event == "ping":
+        return jsonify({"ok": True, "event": "ping"})  # no HMAC for ping
 
-    # Parse JSON payload
-    data = request.get_json(force=True)
-    event_type = request.headers.get("X-GitHub-Event")
-    print(f"Received GitHub event: {event_type}")
-    print(data)
+    if secret:
+        try:
+            _, sent = sig_hdr.split("=", 1)
+        except Exception:
+            return jsonify({"ok": False, "err": "missing/invalid signature"}), 403
+        calc = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(calc, sent):
+            return jsonify({"ok": False, "err": "bad signature"}), 403
 
-    # Example: trigger a pull to update repo
-    if event_type == "push":
-        subprocess.run(["git", "-C", "/path/to/your/project", "pull"])
+    # handle push...
+    return jsonify({"ok": True, "event": event})
 
-    return jsonify({"ok": True})
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", "8080"))
+    app.run(host="0.0.0.0", port=port)
