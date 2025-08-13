@@ -378,6 +378,16 @@ def api_forget():
     # Best-effort result; devices list will reflect reality
     return jsonify({"ok": True, "log": clean_for_js(txt)})
 
+@app.post("/api/test_audio")
+def api_test_audio():
+    """Play a short test sound to verify the audio path."""
+    wav = "/usr/share/sounds/alsa/Front_Center.wav"
+    try:
+        subprocess.run(["aplay", "-q", wav], check=True)
+        return jsonify({"ok": True, "log": ""})
+    except Exception as e:
+        return jsonify({"ok": False, "log": clean_for_js(str(e))}), 500
+
 @app.get("/")
 def index():
     return render_template("index.html")
