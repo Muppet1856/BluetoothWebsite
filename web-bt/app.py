@@ -1,23 +1,10 @@
 #!/usr/bin/env python3
-# app.py
-# Version 1.0
 import os, re, time, atexit, subprocess
-from html import escape
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
 
-# ---------- Regex & constants ----------
-DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17}) (.+)$")
-BOOL_LINE = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
-ADAPTER_BOOL = re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|no)$", re.I)
-ANSI_SGR = re.compile(r"\x1b\[[0-9;]*m")
-# CSI sequences that are NOT SGR (m). We remove these entirely.
-NON_SGR_CSI = re.compile(
-    r"\x1b\[[0-9;?]*[A-HJKSTfP]|\x1b\[K|\x1b\[\d+P",
-    re.MULTILINE
-)
-
+# ------------------ Hints for audio devices ------------------
 AUDIO_UUID_HINTS = (
     "0000110b",  # A2DP Sink
     "0000110a",  # A2DP Source
@@ -43,14 +30,12 @@ ADAPTER_CACHE = {"mac": None, "ts": 0.0}
 
 # ------------------ Utilities ------------------
 def clean_for_js(text: str) -> str:
-    """Keep printable characters plus newline, tab, and ESC for ANSI color codes."""
-    return "".join(ch for ch in text if ch in ("\n", "\t", "\x1b") or ord(ch) >= 0x20)
+    """Keep printable, plus newline and tab. (Client will render ANSI with ansi-to-html.)"""
+    return "".join(ch for ch in text if ch in ("\n", "\t") or ord(ch) >= 0x20)
 
 def _get_adapter_mac(timeout=10):
-    """Return the local Bluetooth adapter's MAC address, caching the result."""
     now = time.time()
     if ADAPTER_CACHE["mac"] and now - ADAPTER_CACHE["ts"] < 10:
-        # Reuse a recently discovered address to avoid extra bluetoothctl calls
         return ADAPTER_CACHE["mac"]
     p = subprocess.run(["bluetoothctl", "show"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     out = p.stdout.decode(errors="ignore")
@@ -58,7 +43,6 @@ def _get_adapter_mac(timeout=10):
     for line in out.splitlines():
         s = line.strip()
         if s.startswith("Controller "):
-            # Expected output line: "Controller <MAC>"
             parts = s.split()
             if len(parts) >= 2:
                 mac = parts[1]
@@ -80,7 +64,6 @@ def run_bctl(cmds, timeout=30):
     return p.returncode, p.stdout.decode(errors="ignore"), p.stderr.decode(errors="ignore")
 
 def adapter_status():
-    """Query bluetoothctl for basic controller state."""
     rc, out, _ = run_bctl(["show"])
     st = {"powered": False, "discovering": False, "addr": None, "name": None}
     for line in out.splitlines():
@@ -91,14 +74,11 @@ def adapter_status():
         m = ADAPTER_BOOL.match(s)
         if m:
             key, val = m.group(1).lower(), (m.group(2).lower() == "yes")
-            if key == "powered":
-                st["powered"] = val
-            elif key == "discovering":
-                st["discovering"] = val
+            if key == "powered":      st["powered"] = val
+            elif key == "discovering":st["discovering"] = val
     return st
 
 def list_devices():
-    """Return MAC/name pairs for devices known to bluetoothctl."""
     rc, out, _ = run_bctl(["devices"])
     devices = []
     for line in out.splitlines():
@@ -108,11 +88,9 @@ def list_devices():
     return devices
 
 def get_info(mac):
-    """Fetch detailed information for a device given its MAC address."""
     rc, out, _ = run_bctl([f"info {mac}"])
     info = {"paired": False, "trusted": False, "connected": False, "alias": None, "uuids": []}
-    alias = None
-    uuids = []
+    alias = None; uuids = []
     for line in out.splitlines():
         s = line.strip()
         b = BOOL_LINE.match(s)
@@ -128,7 +106,6 @@ def get_info(mac):
     return info
 
 def is_audio_capable(info, name_hint=""):
-    """Heuristically determine if a device supports audio profiles."""
     uuids = " ".join(info.get("uuids", [])).lower()
     if any(u in uuids for u in AUDIO_UUID_HINTS):
         return True
@@ -136,7 +113,6 @@ def is_audio_capable(info, name_hint=""):
     return any(k in name for k in AUDIO_NAME_HINTS)
 
 def wait_info(mac, key, want=True, tries=12, delay=0.5):
-    """Poll ``get_info`` until a boolean key matches the desired value."""
     for _ in range(tries):
         info = get_info(mac)
         if bool(info.get(key)) == bool(want):
@@ -146,7 +122,6 @@ def wait_info(mac, key, want=True, tries=12, delay=0.5):
 
 # ------------------ Persistent scanner session ------------------
 def _start_persistent_scan():
-    """Launch a long-running bluetoothctl process to maintain scanning."""
     if SCAN_PROC["p"] and SCAN_PROC["p"].poll() is None:
         return
     adapter = _get_adapter_mac()
@@ -161,18 +136,15 @@ def _start_persistent_scan():
     SCAN_PROC["p"] = p
     SCAN_PROC["adapter"] = adapter
     init = []
-    if adapter:
-        init.append(f"select {adapter}")
+    if adapter: init.append(f"select {adapter}")
     init += ["power on", "agent NoInputNoOutput", "default-agent", "pairable on", "scan on"]
     for c in init:
         try:
-            p.stdin.write(c + "\n")
-            p.stdin.flush()
+            p.stdin.write(c + "\n"); p.stdin.flush()
         except Exception:
             break
 
 def _persistent_write(lines):
-    """Send commands to the persistent bluetoothctl scanner session."""
     p = SCAN_PROC.get("p")
     if not p or p.poll() is not None:
         _start_persistent_scan()
@@ -186,31 +158,22 @@ def _persistent_write(lines):
             pass
 
 def _stop_persistent_scan():
-    """Terminate the persistent scanner process if it exists."""
     p = SCAN_PROC.get("p")
-    SCAN_PROC["p"] = None
-    SCAN_PROC["adapter"] = None
-    if not p:
-        return
+    SCAN_PROC["p"] = None; SCAN_PROC["adapter"] = None
+    if not p: return
     try:
         if p.poll() is None:
             for c in ["scan off", "quit"]:
-                try:
-                    p.stdin.write(c + "\n")
-                    p.stdin.flush()
-                except Exception:
-                    pass
+                try: p.stdin.write(c + "\n"); p.stdin.flush()
+                except Exception: pass
             for _ in range(10):
-                if p.poll() is not None:
-                    break
+                if p.poll() is not None: break
                 time.sleep(0.1)
         if p.poll() is None:
             p.kill()
     except Exception:
-        try:
-            p.kill()
-        except Exception:
-            pass
+        try: p.kill()
+        except Exception: pass
 
 @atexit.register
 def _cleanup():
@@ -378,46 +341,9 @@ def api_forget():
     # Best-effort result; devices list will reflect reality
     return jsonify({"ok": True, "log": clean_for_js(txt)})
 
-@app.post("/api/test_audio")
-def api_test_audio():
-    """Play a short test sound to verify the audio path."""
-    wav = "/usr/share/sounds/alsa/Front_Center.wav"
-    try:
-        subprocess.run(["aplay", "-q", wav], check=True)
-        return jsonify({"ok": True, "log": ""})
-    except Exception as e:
-        return jsonify({"ok": False, "log": clean_for_js(str(e))}), 500
-
 @app.get("/")
 def index():
     return render_template("index.html")
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", "8080"))
-    app.run(host="0.0.0.0", port=port)
-
-@app.post("/github-webhook")
-def github_webhook():
-    import hmac, hashlib, os
-    secret = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
-    payload = request.get_data(cache=False)
-    sig_hdr = request.headers.get("X-Hub-Signature-256", "")
-    event   = request.headers.get("X-GitHub-Event", "unknown")
-
-    if secret:
-        try:
-            _, sent = sig_hdr.split("=", 1)
-        except Exception:
-            return jsonify({"ok": False, "err": "missing/invalid signature"}), 403
-        calc = hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-        if not hmac.compare_digest(calc, sent):
-            return jsonify({"ok": False, "err": "bad signature"}), 403
-
-    if event == "ping":
-        return jsonify({"ok": True, "event": "ping"})  # no HMAC for ping
-
-    # handle push...
-    return jsonify({"ok": True, "event": event})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
