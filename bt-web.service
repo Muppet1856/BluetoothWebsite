@@ -8,7 +8,9 @@ After=network.target bluetooth.target
 ExecStart=/usr/bin/python3 /opt/bt-web/app.py
 WorkingDirectory=/opt/bt-web
 Restart=on-failure
-User=pi
+# Run as a non-root user; replace 'bt-web' with the account that owns /opt/bt-web
+User=bt-web
+Group=bt-web
 Environment=PYTHONUNBUFFERED=1
 Environment=PORT=8080
 # Uncomment to enable GitHub webhook auto-deploy
