@@ -13,6 +13,7 @@ const copyLogBtn   = document.getElementById('copyLogBtn');
 const countEl      = document.getElementById('count');
 const logBox       = document.getElementById('logBox');
 const audioOnlyChk = document.getElementById('audioOnly');
+const testAudioBtn = document.getElementById('testAudioBtn');
 
 // --- ANSI renderer (client-side) ---
 const ansi = new AnsiToHtml();          // from CDN in index.html
@@ -44,7 +45,7 @@ function deviceStateBadge(d) {
 function renderStatus(info) {
   if (!info) {
     statusArea.innerHTML = '<span class="text-secondary">No device selected.</span>';
-    connectBtn.disabled = true; disconnectBtn.disabled = true; forgetBtn.disabled = true;
+    connectBtn.disabled = true; disconnectBtn.disabled = true; forgetBtn.disabled = true; testAudioBtn.disabled = true;
     return;
   }
   statusArea.innerHTML =
@@ -52,6 +53,7 @@ function renderStatus(info) {
   connectBtn.disabled    = info.connected || !selectedMac;
   disconnectBtn.disabled = !info.connected || !selectedMac;
   forgetBtn.disabled     = !selectedMac;
+  testAudioBtn.disabled  = !info.connected || !selectedMac;
 }
 
 function renderList() {
@@ -195,6 +197,20 @@ forgetBtn.addEventListener('click', async () => {
   selectedMac = devices[0]?.mac || "";
   await refreshDeviceInfo();
   forgetBtn.disabled = false;
+});
+
+testAudioBtn.addEventListener('click', async () => {
+  testAudioBtn.disabled = true;
+  try {
+    const res = await fetch('/api/test_audio', { method: 'POST' });
+    const data = await res.json();
+    showLogRAW(data.log || "");
+    if (!data.ok) alert('Test audio failed');
+  } catch (e) {
+    showLogRAW(String(e));
+    alert('Test audio failed');
+  }
+  testAudioBtn.disabled = false;
 });
 
 refreshBtn.addEventListener('click', async () => {

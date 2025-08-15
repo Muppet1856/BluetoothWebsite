@@ -339,6 +339,26 @@ def api_disconnect():
     txt = f"\x1b[1m== disconnect\x1b[0m\n{out}{err}"
     return jsonify({"ok": not info.get("connected", False), "info": info, "log": clean_for_js(txt)})
 
+@app.post("/api/test_audio")
+def api_test_audio():
+    try:
+        p = subprocess.run(
+            ["speaker-test", "-t", "sine", "-f", "440", "-l", "1"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=10,
+        )
+        txt = f"\x1b[1m== test-audio\x1b[0m\n{p.stdout.decode(errors='ignore')}"
+        return jsonify({"ok": p.returncode == 0, "log": clean_for_js(txt)})
+    except FileNotFoundError as e:
+        txt = f"speaker-test not found: {e}"
+        return jsonify({"ok": False, "log": clean_for_js(txt)}), 500
+    except subprocess.TimeoutExpired as e:
+        txt = f"test audio timeout: {e}"
+        return jsonify({"ok": False, "log": clean_for_js(txt)}), 500
+    except Exception as e:
+        return jsonify({"ok": False, "log": clean_for_js(str(e))}), 500
+
 @app.post("/api/forget")
 def api_forget():
     mac = request.json.get("mac","")
