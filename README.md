@@ -146,6 +146,20 @@ The app can listen for GitHub webhooks and trigger a local script on each push.
    export GITHUB_WEBHOOK_SECRET="<your-secret>"
    ```
 
+   If the app runs as a systemd service, add the secret to the unit file instead:
+
+   ```ini
+   # /etc/systemd/system/bt-web.service
+   [Service]
+   Environment=GITHUB_WEBHOOK_SECRET=<your-secret>
+   ```
+
+   Then reload and restart:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart bt-web
+   ```
 3. (Optional) Specify a script to run (defaults to `deploy.sh` in the project root):
 
    ```bash
