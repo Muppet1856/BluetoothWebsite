@@ -132,6 +132,45 @@ aplay -D bluealsa:DEV=<Speaker-MAC>,PROFILE=a2dp /usr/share/sounds/alsa/Front_Ce
 
 ---
 
+## 6) Auto-update via GitHub webhook
+
+The app can listen for GitHub webhooks and trigger a local script on each push.
+
+1. Create a webhook in your GitHub repository pointing to:
+
+   `http://<Host IP>:8080/github-webhook`
+
+2. Set a **secret** for the webhook and export it before starting the app:
+
+   ```bash
+   export GITHUB_WEBHOOK_SECRET="<your-secret>"
+   ```
+
+   If the app runs as a systemd service, add the secret to the unit file instead:
+
+   ```ini
+   # /etc/systemd/system/bt-web.service
+   [Service]
+   Environment=GITHUB_WEBHOOK_SECRET=<your-secret>
+   ```
+
+   Then reload and restart:
+
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl restart bt-web
+   ```
+
+3. (Optional) Specify a script to run (defaults to `deploy.sh` in the project root):
+
+   ```bash
+   export GITHUB_WEBHOOK_SCRIPT="/path/to/your/script.sh"
+   ```
+
+On each push, the script executes in the background, allowing simple auto-deployments.
+
+---
+
 ## How it works (summary)
 
 - **Scan On** starts a persistent `bluetoothctl` session that keeps scanning.

@@ -11,6 +11,8 @@ Restart=on-failure
 User=pi
 Environment=PYTHONUNBUFFERED=1
 Environment=PORT=8080
+# Uncomment to enable GitHub webhook auto-deploy
+# Environment=GITHUB_WEBHOOK_SECRET=your-secret
 
 [Install]
 WantedBy=multi-user.target
