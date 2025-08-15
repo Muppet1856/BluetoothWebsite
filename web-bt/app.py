@@ -84,13 +84,14 @@ def adapter_status():
     return st
 
 def list_devices():
-    rc, out, _ = run_bctl(["devices"])
-    devices = []
+    rc, out, _ = run_bctl(["devices", "paired-devices"])
+    found = {}
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
-            devices.append({"mac": m.group(1), "name": m.group(2)})
-    return devices
+            mac, name = m.group(1), m.group(2)
+            found.setdefault(mac, {"mac": mac, "name": name})
+    return list(found.values())
 
 def get_info(mac):
     rc, out, _ = run_bctl([f"info {mac}"])
