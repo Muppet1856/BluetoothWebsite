@@ -95,8 +95,8 @@ def list_devices():
 
 def get_info(mac):
     rc, out, _ = run_bctl([f"info {mac}"])
-    info = {"paired": False, "trusted": False, "connected": False, "alias": None, "uuids": []}
-    alias = None; uuids = []
+    info = {"paired": False, "trusted": False, "connected": False, "alias": None, "uuids": [], "class": None}
+    alias = None; uuids = []; cls = None
     for line in out.splitlines():
         s = line.strip()
         b = BOOL_LINE.match(s)
@@ -107,8 +107,11 @@ def get_info(mac):
             alias = s.split("Alias:", 1)[1].strip()
         elif s.startswith("UUID:"):
             uuids.append(s.split("UUID:", 1)[1].strip())
+        elif s.startswith("Class:"):
+            cls = s.split("Class:", 1)[1].strip()
     info["alias"] = alias
     info["uuids"] = uuids
+    info["class"] = cls
     return info
 
 def is_audio_capable(info, name_hint=""):
@@ -116,7 +119,18 @@ def is_audio_capable(info, name_hint=""):
     if any(u in uuids for u in AUDIO_UUID_HINTS):
         return True
     name = (name_hint or "").lower()
-    return any(k in name for k in AUDIO_NAME_HINTS)
+    if any(k in name for k in AUDIO_NAME_HINTS):
+        return True
+    cls = info.get("class")
+    if isinstance(cls, str):
+        try:
+            cod = int(cls, 16)
+            major = (cod >> 8) & 0x1F
+            if major == 0x04:  # Audio/Video major class
+                return True
+        except ValueError:
+            pass
+    return False
 
 def wait_info(mac, key, want=True, tries=12, delay=0.5):
     for _ in range(tries):
