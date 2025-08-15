@@ -10,7 +10,7 @@ Open it from any browser on your LAN.
 - Hardware: **Raspberry Pi Zero 2 W**
 - OS: **Debian GNU/Linux 12 (Bookworm) – aarch64**
 - Kernel: **6.12.41-v8+**
-- Bluetooth: **BlueZ 5.x**
+- Bluetooth: **BlueZ 5.66**
 - Audio: **bluez-alsa-utils** (modern replacement for `bluealsa`)
 
 ---
