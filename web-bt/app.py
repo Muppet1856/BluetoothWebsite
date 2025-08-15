@@ -19,8 +19,20 @@ AUDIO_UUID_HINTS = (
     "0000111e",  # Handsfree (HFP)
 )
 AUDIO_NAME_HINTS = (
-    "bose", "soundlink", "speaker", "headset", "headphone", "airpods",
-    "jbl", "sony", "anker", "marshall", "beats", "earbud", "soundcore"
+    "bose",
+    "soundlink",
+    "speaker",
+    "headset",
+    "headphone",
+    "airpods",
+    "jbl",
+    "sony",
+    "anker",
+    "marshall",
+    "beats",
+    "earbud",
+    "soundcore",
+    "klipsch",
 )
 
 # ------------------ Regex ------------------

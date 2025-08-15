@@ -43,6 +43,11 @@ def test_returns_true_for_name_hint():
     assert is_audio_capable(info, name_hint="My SoundLink Device") is True
 
 
+def test_returns_true_for_klipsch_name_hint():
+    info = {"uuids": []}
+    assert is_audio_capable(info, name_hint="Klipsch Speaker") is True
+
+
 def test_returns_false_without_hints():
     info = {"uuids": ["1234", "abcd"]}
     assert is_audio_capable(info, name_hint="GenericDevice") is False
