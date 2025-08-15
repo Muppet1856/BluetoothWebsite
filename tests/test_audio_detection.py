@@ -46,3 +46,8 @@ def test_returns_true_for_name_hint():
 def test_returns_false_without_hints():
     info = {"uuids": ["1234", "abcd"]}
     assert is_audio_capable(info, name_hint="GenericDevice") is False
+
+
+def test_returns_true_for_audio_cod_major_class():
+    info = {"class": "0x00240404"}
+    assert is_audio_capable(info) is True
