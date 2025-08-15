@@ -5,8 +5,8 @@ Description=Bluetooth Web UI
 After=network.target bluetooth.target
 
 [Service]
-ExecStart=/usr/bin/python3 /opt/bt-web/app.py
-WorkingDirectory=/opt/bt-web
+ExecStart=/usr/bin/python3 /opt/bt-web/web-bt/app.py
+WorkingDirectory=/opt/bt-web/web-bt
 Restart=on-failure
 # Run as a non-root user; replace 'bt-web' with the account that owns /opt/bt-web
 User=bt-web
