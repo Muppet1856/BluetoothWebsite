@@ -305,15 +305,24 @@ def api_devices():
     audio_only = request.args.get("audio_only") in ("1","true","yes","on")
     base = list_devices()
     enriched = []
+    dropped = []
     for d in base:
         info = get_info(d["mac"])
         name = info.get("alias") or d.get("name") or ""
+        audio_ok = is_audio_capable(info, name)
         d |= {"alias": info.get("alias")}
         d |= info
-        if (not audio_only) or is_audio_capable(info, name) or info.get("paired") or info.get("connected"):
+        if (not audio_only) or audio_ok or info.get("paired") or info.get("connected"):
             enriched.append(d)
+        else:
+            if audio_only and (not audio_ok) and (not info.get("paired")) and (not info.get("connected")):
+                print(f"[drop] mac={d['mac']} name={name} class={info.get('class')}")
+                dropped.append({"mac": d["mac"], "name": name, "class": info.get("class")})
     enriched.sort(key=lambda x: (not x.get("connected"), not x.get("paired"), (x.get("alias") or x.get("name") or "")))
-    return jsonify({"devices": enriched})
+    result = {"devices": enriched}
+    if dropped:
+        result["dropped"] = dropped
+    return jsonify(result)
 
 @app.get("/api/info")
 def api_info():
