@@ -66,7 +66,7 @@ function renderList() {
     item.innerHTML = `
       <div>
         <div class="fw-semibold">${alias}</div>
-        <div class="text-secondary small mac">${d.mac}</div>
+        <div class="badge text-bg-secondary rounded-pill mac">${d.mac}</div>
       </div>
       <div>${deviceStateBadge(d)}</div>
     `;

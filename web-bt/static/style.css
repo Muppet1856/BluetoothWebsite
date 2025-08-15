@@ -12,15 +12,15 @@
     padding: 0.5rem;
 }
 
-/* Ensure MAC address is readable when row is active */
+/* Ensure MAC address badge is readable when row is active */
 .list-group-item.active .mac {
-    color: #e5e7eb !important; /* light gray */
-    opacity: 0.95;
+    background-color: #adb5bd; /* lighter gray */
+    color: #212529;
 }
 
-/* Keep device name + MAC aligned nicely */
+/* Keep device name + MAC badge aligned nicely */
 .mac {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 /* Scan status message */
