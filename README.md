@@ -51,16 +51,19 @@ sudo adduser --system --group bt-web   # create user+group if they don't exist
 sudo chown -R bt-web:bt-web /opt/bt-web
 ```
 
-Your tree should look like:
+After cloning, the application code lives in the `web-bt` subdirectory:
 
 ```
 /opt/bt-web
-├── app.py
-├── templates/
-│   └── index.html
-└── static/
-    ├── script.js
-    └── style.css
+├── web-bt/
+│   ├── app.py
+│   ├── templates/
+│   │   └── index.html
+│   └── static/
+│       ├── script.js
+│       └── style.css
+├── bt-web.service
+└── deploy.sh
 ```
 
 ---
@@ -68,7 +71,7 @@ Your tree should look like:
 ## 3) Quick test (foreground)
 
 ```bash
-python3 /opt/bt-web/app.py
+python3 /opt/bt-web/web-bt/app.py
 ```
 
 Then in a browser on your network:
@@ -99,8 +102,8 @@ Wants=bluetooth.service network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/bt-web
-ExecStart=/usr/bin/python3 /opt/bt-web/app.py
+WorkingDirectory=/opt/bt-web/web-bt
+ExecStart=/usr/bin/python3 /opt/bt-web/web-bt/app.py
 Environment=PORT=8080
 Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
