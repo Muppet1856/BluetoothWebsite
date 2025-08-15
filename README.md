@@ -41,7 +41,14 @@ sudo systemctl enable --now bluetooth
 sudo mkdir -p /opt/bt-web
 cd /opt
 sudo git clone https://github.com/<your-username>/<your-repo>.git bt-web
-sudo chown -R pi:pi /opt/bt-web
+```
+
+The service runs as a non-root user. Create a dedicated system account (e.g., `bt-web`)
+and ensure the app files are owned by it:
+
+```bash
+sudo adduser --system --group bt-web   # create user+group if they don't exist
+sudo chown -R bt-web:bt-web /opt/bt-web
 ```
 
 Your tree should look like:
@@ -78,6 +85,9 @@ Stop the app with `Ctrl+C` when done testing.
 
 ## 4) Run as a service (systemd)
 
+Ensure the service runs as the same non-root user that owns `/opt/bt-web`.
+Replace `bt-web` in the unit file if you used a different account.
+
 Create the service file:
 
 ```bash
@@ -94,8 +104,8 @@ ExecStart=/usr/bin/python3 /opt/bt-web/app.py
 Environment=PORT=8080
 Environment=PYTHONUNBUFFERED=1
 Restart=on-failure
-User=pi
-Group=pi
+User=bt-web
+Group=bt-web
 
 [Install]
 WantedBy=multi-user.target
