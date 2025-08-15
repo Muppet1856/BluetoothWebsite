@@ -160,7 +160,6 @@ The app can listen for GitHub webhooks and trigger a local script on each push.
    sudo systemctl daemon-reload
    sudo systemctl restart bt-web
    ```
-
 3. (Optional) Specify a script to run (defaults to `deploy.sh` in the project root):
 
    ```bash
