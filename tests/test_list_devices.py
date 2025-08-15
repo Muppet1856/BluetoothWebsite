@@ -39,4 +39,4 @@ def test_list_devices_includes_paired(monkeypatch):
 
     monkeypatch.setattr(app, "run_bctl", fake_run_bctl)
     devices = app.list_devices()
-    assert devices == [{"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker"}]
+    assert devices == [{"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker", "type": None}]

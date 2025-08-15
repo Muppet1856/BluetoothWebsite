@@ -36,7 +36,7 @@ AUDIO_NAME_HINTS = (
 )
 
 # ------------------ Regex ------------------
-DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17}) (.+)$")
+DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17})(?: \((random|public)\))? (.+)$")
 BOOL_LINE   = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
 ADAPTER_BOOL= re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|no)$", re.I)
 
@@ -101,14 +101,22 @@ def list_devices():
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
-            mac, name = m.group(1), m.group(2)
-            found.setdefault(mac, {"mac": mac, "name": name})
+            mac, addr_type, name = m.group(1), m.group(2), m.group(3)
+            found.setdefault(mac, {"mac": mac, "name": name, "type": addr_type})
     return list(found.values())
 
 def get_info(mac):
     rc, out, _ = run_bctl([f"info {mac}"])
-    info = {"paired": False, "trusted": False, "connected": False, "alias": None, "uuids": [], "class": None}
-    alias = None; uuids = []; cls = None
+    info = {
+        "paired": False,
+        "trusted": False,
+        "connected": False,
+        "alias": None,
+        "uuids": [],
+        "class": None,
+        "identity": None,
+    }
+    alias = None; uuids = []; cls = None; identity = None
     for line in out.splitlines():
         s = line.strip()
         b = BOOL_LINE.match(s)
@@ -121,9 +129,12 @@ def get_info(mac):
             uuids.append(s.split("UUID:", 1)[1].strip())
         elif s.startswith("Class:"):
             cls = s.split("Class:", 1)[1].strip()
+        elif s.startswith("Identity Address:"):
+            identity = s.split("Identity Address:", 1)[1].strip().split()[0]
     info["alias"] = alias
     info["uuids"] = uuids
     info["class"] = cls
+    info["identity"] = identity
     return info
 
 def is_audio_capable(info, name_hint=""):

@@ -62,13 +62,16 @@ function renderList() {
 
   devices.forEach(d => {
     const alias = d.alias || d.name || "(unknown)";
+    const identityLink = d.identity && d.identity !== d.mac
+      ? `<a href="#" class="ms-2 small identity-link" data-mac="${d.identity}">→ ${d.identity}</a>`
+      : "";
     const item = document.createElement('button');
     item.type = "button";
     item.className = "list-group-item list-group-item-action d-flex justify-content-between align-items-center";
     item.innerHTML = `
       <div>
         <div class="fw-semibold">${alias}</div>
-        <div class="badge text-bg-secondary rounded-pill mac">${d.mac}</div>
+        <div class="badge text-bg-secondary rounded-pill mac">${d.mac}</div>${identityLink}
       </div>
       <div>${deviceStateBadge(d)}</div>
     `;
@@ -79,6 +82,17 @@ function renderList() {
       await refreshDeviceInfo();
     });
     deviceList.appendChild(item);
+
+    if (identityLink) {
+      const link = item.querySelector('.identity-link');
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        selectedMac = link.getAttribute('data-mac');
+        renderList();
+        await refreshDeviceInfo();
+      });
+    }
   });
 
   if (devices.length === 0) {
