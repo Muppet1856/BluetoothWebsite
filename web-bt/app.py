@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-import os, re, time, atexit, subprocess
+import os, re, time, atexit, subprocess, hmac, hashlib
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
+
+# Default script to run for GitHub webhook events
+DEFAULT_WEBHOOK_SCRIPT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "deploy.sh")
+)
 
 # ------------------ Hints for audio devices ------------------
 AUDIO_UUID_HINTS = (
@@ -344,6 +349,25 @@ def api_forget():
     txt = f"\x1b[1m== remove\x1b[0m\n{out}{err}"
     # Best-effort result; devices list will reflect reality
     return jsonify({"ok": True, "log": clean_for_js(txt)})
+
+@app.post("/github-webhook")
+def github_webhook():
+    secret = os.environ.get("GITHUB_WEBHOOK_SECRET")
+    if secret:
+        signature = request.headers.get("X-Hub-Signature-256", "")
+        if not signature.startswith("sha256="):
+            return jsonify({"ok": False, "error": "invalid signature"}), 400
+        sig = signature.split("=", 1)[1]
+        mac = hmac.new(secret.encode(), request.data, hashlib.sha256)
+        if not hmac.compare_digest(mac.hexdigest(), sig):
+            return jsonify({"ok": False, "error": "bad signature"}), 403
+    if request.headers.get("X-GitHub-Event") == "push":
+        script = os.environ.get("GITHUB_WEBHOOK_SCRIPT", DEFAULT_WEBHOOK_SCRIPT)
+        try:
+            subprocess.Popen(["bash", script])
+        except Exception as exc:
+            return jsonify({"ok": False, "error": str(exc)}), 500
+    return jsonify({"ok": True})
 
 @app.get("/")
 def index():
