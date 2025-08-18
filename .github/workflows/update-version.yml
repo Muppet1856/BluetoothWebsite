@@ -1,0 +1,35 @@
+name: Update VERSION File with Hash
+
+on:
+  push:
+    branches:
+      - main  # Adjust to your branch (e.g., master, develop)
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for accurate file listing
+
+      # Step 2: Update VERSION file with hash of tracked files
+      - name: Update VERSION file
+        run: |
+          # Compute hash of all tracked files excluding VERSION, sorted for consistency
+          hash=$(git ls-files | grep -v '^VERSION$' | sort | xargs cat | sha256sum | cut -d' ' -f1)
+          echo "$hash" > VERSION
+          echo "Generated version: $hash"
+
+      # Step 3: Commit and push the updated VERSION file
+      - name: Commit and push VERSION update
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+          git add VERSION
+          git commit -m "Update VERSION to $hash" || echo "No changes to commit"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
