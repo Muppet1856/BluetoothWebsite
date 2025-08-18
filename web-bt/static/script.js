@@ -16,6 +16,9 @@ const audioOnlyChk = document.getElementById('audioOnly');
 const testAudioBtn = document.getElementById('testAudioBtn');
 
 // --- ANSI renderer (client-side) ---
+if (window.APP_VERSION) {
+  console.debug('App version:', window.APP_VERSION);
+}
 const ansi = new AnsiToHtml();          // from CDN in index.html
 let lastLogRaw = "";                    // plain text for "Copy" button
 
