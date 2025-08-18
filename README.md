@@ -133,9 +133,39 @@ http://<Host IP>:8080/
 
 ## 5) (Optional) Audio test with BlueALSA
 
-Once **Connected** to your speaker, play the test sound:
+Prepare BlueALSA for the service account and test playback.
+**Replace `<Speaker-MAC>` with your speaker's MAC address in all commands.**
 
 ```bash
+# Add bt-web to the audio group
+sudo usermod -aG audio bt-web
+
+# Allow audio group to use BlueALSA over D-Bus
+sudo tee /etc/dbus-1/system.d/bluealsa.conf > /dev/null <<'EOF'
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-BUS Bus Configuration 1.0//EN"
+  "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <policy user="root">
+    <allow own="org.bluealsa"/>
+  </policy>
+  <policy group="audio">
+    <allow send_destination="org.bluealsa" interface="org.freedesktop.DBus.ObjectManager"/>
+    <allow send_destination="org.bluealsa" interface="org.freedesktop.DBus.Properties"/>
+  </policy>
+</busconfig>
+EOF
+
+# Restart services
+sudo systemctl restart dbus
+sudo systemctl restart bluealsa
+
+# (Optional) set BlueALSA as default ALSA device for bt-web
+sudo -u bt-web tee ~bt-web/.asoundrc > /dev/null <<'EOF'
+defaults.bluealsa.service "org.bluealsa"
+defaults.bluealsa.device "<Speaker-MAC>"  # replace with your speaker MAC
+defaults.bluealsa.profile "a2dp"
+EOF
+
 # Find the bluealsa device strings
 aplay -L | grep -A2 bluealsa
 
