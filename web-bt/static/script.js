@@ -46,6 +46,7 @@ function deviceStateBadge(d) {
 }
 
 function availabilityBadge(d) {
+  if (d.connected) return "";
   return d.available
     ? '<span class="badge text-bg-success ms-1">Available</span>'
     : '<span class="badge text-bg-secondary ms-1">Unavailable</span>';
