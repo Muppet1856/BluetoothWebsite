@@ -3,7 +3,7 @@ import sys
 import types
 from pathlib import Path
 
-# Minimal Flask stub for api_devices tests
+# Minimal Flask stub
 flask_stub = types.ModuleType("flask")
 
 class _Flask:
@@ -25,35 +25,29 @@ flask_stub.render_template = lambda *a, **k: None
 sys.modules.setdefault("flask", flask_stub)
 
 spec = importlib.util.spec_from_file_location(
-    "app", Path(__file__).resolve().parents[1] / "web-bt" / "app.py"
+    "app", Path(__file__).resolve().parents[1] / "web-bt" / "app.py",
 )
 app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
 
 
-def test_api_devices_logs_dropped(monkeypatch, capsys):
+def test_random_address_replaced_with_identity(monkeypatch):
     monkeypatch.setattr(
-        app, "list_devices", lambda: [{"mac": "AA:BB:CC:DD:EE:FF", "name": "Thing"}]
+        app,
+        "list_devices",
+        lambda: [{"mac": "AA:AA:AA:AA:AA:01", "name": "Foo", "type": "random"}],
     )
 
     def fake_get_info(mac):
         return {
-            "alias": "Thing",
-            "class": "0x1234",
+            "alias": "Foo",
+            "class": "0x000400",
             "paired": False,
             "connected": False,
+            "identity": "BB:BB:BB:BB:BB:01",
         }
 
     monkeypatch.setattr(app, "get_info", fake_get_info)
-    monkeypatch.setattr(app, "is_audio_capable", lambda info: False)
-
-    flask_stub.request.args = {"audio_only": "1"}
-    resp = app.api_devices()
-    assert resp == {
-        "devices": [],
-        "dropped": [{"mac": "AA:BB:CC:DD:EE:FF", "name": "Thing", "class": "0x1234"}],
-    }
-    out = capsys.readouterr().out
-    assert "AA:BB:CC:DD:EE:FF" in out
-    assert "Thing" in out
-    assert "0x1234" in out
+    flask_stub.request.args = {"audio_only": "0"}
+    data = app.api_devices()
+    assert data["devices"][0]["mac"] == "BB:BB:BB:BB:BB:01"
