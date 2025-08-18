@@ -411,7 +411,13 @@ def github_webhook():
 
 @app.get("/")
 def index():
-    return render_template("index.html")
+    version = "unknown"
+    try:
+        with open(os.path.join(os.path.dirname(__file__), "..", "VERSION")) as f:
+            version = f.read().strip()
+    except Exception:
+        pass
+    return render_template("index.html", version=version)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8080"))
