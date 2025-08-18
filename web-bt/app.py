@@ -71,23 +71,27 @@ def adapter_status():
 
 def list_devices():
     """Return known devices and mark which ones are currently discoverable."""
-    # Devices currently visible in a scan
-    rc, out, _ = run_bctl(["devices"])
+    # Start with paired devices marked unavailable by default
+    rc, out, _ = run_bctl(["paired-devices"])
     found = {}
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
             mac, addr_type, name = m.group(1), m.group(2), m.group(3)
-            found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": True}
+            found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": False}
 
-    # Paired devices may not be advertising at the moment
-    rc, out, _ = run_bctl(["paired-devices"])
+    # Unpaired devices currently visible in a scan
+    rc, out, _ = run_bctl(["devices"])
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
             mac, addr_type, name = m.group(1), m.group(2), m.group(3)
-            found.setdefault(mac, {"mac": mac, "name": name, "type": addr_type, "available": False})
-    return list(found.values())
+            if mac not in found:
+                found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": True}
+
+    devices = list(found.values())
+    devices.sort(key=lambda d: (not d.get("available", False), d.get("mac")))
+    return devices
 
 def get_info(mac):
     rc, out, _ = run_bctl([f"info {mac}"])
