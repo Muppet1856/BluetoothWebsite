@@ -19,9 +19,9 @@ class _Flask:
 
 flask_stub.Flask = _Flask
 flask_stub.jsonify = lambda obj=None, **k: obj
-flask_stub.request = types.SimpleNamespace(json={})
+flask_stub.request = types.SimpleNamespace(json={}, args={})
 flask_stub.render_template = lambda *a, **k: None
-sys.modules.setdefault("flask", flask_stub)
+sys.modules["flask"] = flask_stub
 
 spec = importlib.util.spec_from_file_location(
     "app", Path(__file__).resolve().parents[1] / "web-bt" / "app.py",
@@ -41,7 +41,17 @@ def test_api_test_audio_uses_aplay(monkeypatch):
         return P()
 
     monkeypatch.setattr(app.subprocess, "run", fake_run)
+    flask_stub.request.json = {"mac": "AA:BB:CC:DD:EE:FF"}
     resp = app.api_test_audio()
     assert resp["ok"] is True
     assert called["args"][0] == "aplay"
+    assert "-D" in called["args"]
+    assert "bluealsa:DEV=AA:BB:CC:DD:EE:FF,PROFILE=a2dp" in called["args"]
     assert "/usr/share/sounds/alsa/Front_Center.wav" in called["args"]
+
+
+def test_api_test_audio_requires_mac():
+    flask_stub.request.json = {}
+    resp, code = app.api_test_audio()
+    assert code == 400
+    assert resp["ok"] is False

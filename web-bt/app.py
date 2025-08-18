@@ -361,15 +361,26 @@ def api_disconnect():
 @app.post("/api/test_audio")
 def api_test_audio():
     audio_file = "/usr/share/sounds/alsa/Front_Center.wav"
+    mac = None
+    if hasattr(request, "json"):
+        mac = (request.json or {}).get("mac")
+    if not mac:
+        mac = os.environ.get("TEST_AUDIO_MAC")
+    if not mac:
+        txt = "no device mac supplied"
+        return jsonify({"ok": False, "log": clean_for_js(txt)}), 400
     try:
+        cmd = ["aplay", "-D", f"bluealsa:DEV={mac},PROFILE=a2dp", audio_file]
         p = subprocess.run(
-            ["aplay", audio_file],
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=10,
         )
         txt = f"\x1b[1m== test-audio\x1b[0m\n{p.stdout.decode(errors='ignore')}"
-        return jsonify({"ok": p.returncode == 0, "log": clean_for_js(txt)})
+        if p.returncode != 0:
+            return jsonify({"ok": False, "log": clean_for_js(txt)}), 500
+        return jsonify({"ok": True, "log": clean_for_js(txt)})
     except FileNotFoundError as e:
         txt = f"aplay not found: {e}"
         return jsonify({"ok": False, "log": clean_for_js(txt)}), 500
