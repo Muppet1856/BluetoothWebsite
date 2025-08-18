@@ -25,7 +25,7 @@ flask_stub.render_template = lambda *a, **k: None
 sys.modules.setdefault("flask", flask_stub)
 
 spec = importlib.util.spec_from_file_location(
-    "app", Path(__file__).resolve().parents[1] / "web-bt" / "app.py"
+    "app", Path(__file__).resolve().parents[1] / "web-bt" / "app.py",
 )
 app = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(app)
@@ -33,26 +33,11 @@ spec.loader.exec_module(app)
 is_audio_capable = app.is_audio_capable
 
 
-def test_returns_true_for_audio_uuid():
-    info = {"uuids": ["0000110b-0000-1000-8000-00805f9b34fb"]}
-    assert is_audio_capable(info) is True
-
-
-def test_returns_true_for_name_hint():
-    info = {"uuids": []}
-    assert is_audio_capable(info, name_hint="My SoundLink Device") is True
-
-
-def test_returns_true_for_klipsch_name_hint():
-    info = {"uuids": []}
-    assert is_audio_capable(info, name_hint="Klipsch Speaker") is True
-
-
-def test_returns_false_without_hints():
-    info = {"uuids": ["1234", "abcd"]}
-    assert is_audio_capable(info, name_hint="GenericDevice") is False
-
-
 def test_returns_true_for_audio_cod_major_class():
-    info = {"class": "0x00240404"}
+    info = {"class": "0x000400"}
     assert is_audio_capable(info) is True
+
+
+def test_returns_false_for_non_audio_class():
+    info = {"class": "0x000100"}
+    assert is_audio_capable(info) is False

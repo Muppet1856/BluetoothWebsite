@@ -9,32 +9,6 @@ DEFAULT_WEBHOOK_SCRIPT = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "deploy.sh")
 )
 
-# ------------------ Hints for audio devices ------------------
-AUDIO_UUID_HINTS = (
-    "0000110b",  # A2DP Sink
-    "0000110a",  # A2DP Source
-    "0000110e",  # AVRCP Target
-    "0000110c",  # AVRCP Controller
-    "00001108",  # Headset (HSP)
-    "0000111e",  # Handsfree (HFP)
-)
-AUDIO_NAME_HINTS = (
-    "bose",
-    "soundlink",
-    "speaker",
-    "headset",
-    "headphone",
-    "airpods",
-    "jbl",
-    "sony",
-    "anker",
-    "marshall",
-    "beats",
-    "earbud",
-    "soundcore",
-    "klipsch",
-)
-
 # ------------------ Regex ------------------
 DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17})(?: \((random|public)\))? (.+)$")
 BOOL_LINE   = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
@@ -137,20 +111,13 @@ def get_info(mac):
     info["identity"] = identity
     return info
 
-def is_audio_capable(info, name_hint=""):
-    uuids = " ".join(info.get("uuids", [])).lower()
-    if any(u in uuids for u in AUDIO_UUID_HINTS):
-        return True
-    name = (name_hint or "").lower()
-    if any(k in name for k in AUDIO_NAME_HINTS):
-        return True
+def is_audio_capable(info):
+    """Check Bluetooth class of device for Audio/Video major class."""
     cls = info.get("class")
     if isinstance(cls, str):
         try:
             cod = int(cls, 16)
-            major = (cod >> 8) & 0x1F
-            if major == 0x04:  # Audio/Video major class
-                return True
+            return ((cod >> 8) & 0x1F) == 0x04  # Audio/Video major class
         except ValueError:
             pass
     return False
@@ -302,22 +269,27 @@ def api_scan_status():
 
 @app.get("/api/devices")
 def api_devices():
-    audio_only = request.args.get("audio_only") in ("1","true","yes","on")
+    audio_only = request.args.get("audio_only") in ("1", "true", "yes", "on")
     base = list_devices()
-    enriched = []
+    merged = {}
     dropped = []
     for d in base:
         info = get_info(d["mac"])
+        pub_mac = info.get("identity") or d["mac"]
         name = info.get("alias") or d.get("name") or ""
-        audio_ok = is_audio_capable(info, name)
-        d |= {"alias": info.get("alias")}
-        d |= info
+        audio_ok = is_audio_capable(info)
+        device = {**d, **info, "alias": info.get("alias"), "mac": pub_mac}
         if (not audio_only) or audio_ok or info.get("paired") or info.get("connected"):
-            enriched.append(d)
+            existing = merged.get(pub_mac)
+            if existing:
+                existing.update(device)
+            else:
+                merged[pub_mac] = device
         else:
             if audio_only and (not audio_ok) and (not info.get("paired")) and (not info.get("connected")):
-                print(f"[drop] mac={d['mac']} name={name} class={info.get('class')}")
-                dropped.append({"mac": d["mac"], "name": name, "class": info.get("class")})
+                print(f"[drop] mac={pub_mac} name={name} class={info.get('class')}")
+                dropped.append({"mac": pub_mac, "name": name, "class": info.get("class")})
+    enriched = list(merged.values())
     enriched.sort(key=lambda x: (not x.get("connected"), not x.get("paired"), (x.get("alias") or x.get("name") or "")))
     result = {"devices": enriched}
     if dropped:
