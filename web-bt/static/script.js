@@ -219,7 +219,11 @@ forgetBtn.addEventListener('click', async () => {
 testAudioBtn.addEventListener('click', async () => {
   testAudioBtn.disabled = true;
   try {
-    const res = await fetch('/api/test_audio', { method: 'POST' });
+    const res = await fetch('/api/test_audio', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mac: selectedMac })
+    });
     const data = await res.json();
     showLogRAW(data.log || "");
     if (!data.ok) alert('Test audio failed');
