@@ -141,7 +141,9 @@ async function updateScanUI() {
   const running = !!js.running;
   const on = js.wanted || st.discovering || running;
   scanText.textContent = on ? "Scan Off" : "Scan On";
-  scanMsg.textContent = on ? "Scanning… (continuous)" : "Idle";
+  scanMsg.innerHTML = on
+    ? '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Scanning…'
+    : 'Idle';
   if (on && !polling) {
     polling = setInterval(fetchDevices, 2500);
   } else if (!on && polling) {
