@@ -360,9 +360,10 @@ def api_disconnect():
 
 @app.post("/api/test_audio")
 def api_test_audio():
+    audio_file = "/usr/share/sounds/alsa/Front_Center.wav"
     try:
         p = subprocess.run(
-            ["speaker-test", "-t", "sine", "-f", "440", "-l", "1"],
+            ["aplay", audio_file],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=10,
@@ -370,7 +371,7 @@ def api_test_audio():
         txt = f"\x1b[1m== test-audio\x1b[0m\n{p.stdout.decode(errors='ignore')}"
         return jsonify({"ok": p.returncode == 0, "log": clean_for_js(txt)})
     except FileNotFoundError as e:
-        txt = f"speaker-test not found: {e}"
+        txt = f"aplay not found: {e}"
         return jsonify({"ok": False, "log": clean_for_js(txt)}), 500
     except subprocess.TimeoutExpired as e:
         txt = f"test audio timeout: {e}"
