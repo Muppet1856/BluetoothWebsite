@@ -70,13 +70,23 @@ def adapter_status():
     return st
 
 def list_devices():
-    rc, out, _ = run_bctl(["devices", "paired-devices"])
+    """Return known devices and mark which ones are currently discoverable."""
+    # Devices currently visible in a scan
+    rc, out, _ = run_bctl(["devices"])
     found = {}
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
             mac, addr_type, name = m.group(1), m.group(2), m.group(3)
-            found.setdefault(mac, {"mac": mac, "name": name, "type": addr_type})
+            found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": True}
+
+    # Paired devices may not be advertising at the moment
+    rc, out, _ = run_bctl(["paired-devices"])
+    for line in out.splitlines():
+        m = DEVICE_LINE.match(line.strip())
+        if m:
+            mac, addr_type, name = m.group(1), m.group(2), m.group(3)
+            found.setdefault(mac, {"mac": mac, "name": name, "type": addr_type, "available": False})
     return list(found.values())
 
 def get_info(mac):
@@ -279,6 +289,7 @@ def api_devices():
         name = info.get("alias") or d.get("name") or ""
         audio_ok = is_audio_capable(info)
         device = {**d, **info, "alias": info.get("alias"), "mac": pub_mac}
+        device["available"] = d.get("available", False)
         if (not audio_only) or audio_ok or info.get("paired") or info.get("connected"):
             existing = merged.get(pub_mac)
             if existing:
@@ -290,7 +301,7 @@ def api_devices():
                 print(f"[drop] mac={pub_mac} name={name} class={info.get('class')}")
                 dropped.append({"mac": pub_mac, "name": name, "class": info.get("class")})
     enriched = list(merged.values())
-    enriched.sort(key=lambda x: (not x.get("connected"), not x.get("paired"), (x.get("alias") or x.get("name") or "")))
+    enriched.sort(key=lambda x: (not x.get("connected"), not x.get("available"), not x.get("paired"), (x.get("alias") or x.get("name") or "")))
     result = {"devices": enriched}
     if dropped:
         result["dropped"] = dropped

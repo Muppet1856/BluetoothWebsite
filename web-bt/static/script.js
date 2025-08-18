@@ -45,6 +45,12 @@ function deviceStateBadge(d) {
   return '<span class="badge text-bg-secondary">New</span>';
 }
 
+function availabilityBadge(d) {
+  return d.available
+    ? '<span class="badge text-bg-success ms-1">Available</span>'
+    : '<span class="badge text-bg-secondary ms-1">Unavailable</span>';
+}
+
 function renderStatus(info) {
   if (!info) {
     statusArea.innerHTML = '<span class="text-secondary">No device selected.</span>';
@@ -76,7 +82,7 @@ function renderList() {
         <div class="fw-semibold">${alias}</div>
         <div class="badge text-bg-secondary rounded-pill mac">${d.mac}</div>${identityLink}
       </div>
-      <div>${deviceStateBadge(d)}</div>
+      <div>${deviceStateBadge(d)} ${availabilityBadge(d)}</div>
     `;
     if (d.mac === selectedMac) item.classList.add('active');
     item.addEventListener('click', async () => {
