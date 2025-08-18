@@ -72,10 +72,16 @@
             <div class="d-flex gap-2">
               <button class="btn btn-sm btn-outline-secondary" id="copyLogBtn" title="Copy log to clipboard">Copy</button>
               <button class="btn btn-sm btn-outline-secondary" id="clearLogBtn">Clear</button>
+              <button class="btn btn-sm btn-outline-secondary" id="collapseLogBtn" type="button" data-bs-toggle="collapse" data-bs-target="#logCollapse" aria-expanded="true" aria-controls="logCollapse">
+                <span class="when-open">Hide</span>
+                <span class="when-closed">Show</span>
+              </button>
             </div>
           </div>
-          <div class="card-body">
-            <pre id="logBox" class="mb-0"></pre>
+          <div id="logCollapse" class="collapse show">
+            <div class="card-body">
+              <pre id="logBox" class="mb-0"></pre>
+            </div>
           </div>
         </div>
       </div>

@@ -38,3 +38,14 @@
 .badge {
     margin-right: 0.25rem;
 }
+
+/* Toggle button text for log collapse */
+#collapseLogBtn .when-closed {
+    display: none;
+}
+#collapseLogBtn.collapsed .when-open {
+    display: none;
+}
+#collapseLogBtn.collapsed .when-closed {
+    display: inline;
+}
