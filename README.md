@@ -238,4 +238,4 @@ sudo systemctl start bluetooth
 
 ## License
 
-TBD
+TBD.
