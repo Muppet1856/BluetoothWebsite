@@ -57,3 +57,26 @@ def test_api_devices_logs_dropped(monkeypatch, capsys):
     assert "AA:BB:CC:DD:EE:FF" in out
     assert "Thing" in out
     assert "0x1234" in out
+
+
+def test_api_devices_includes_available(monkeypatch):
+    flask_stub.request.args = {"audio_only": "0"}
+    monkeypatch.setattr(
+        app,
+        "list_devices",
+        lambda: [
+            {"mac": "AA:AA", "name": "Seen", "available": True},
+            {"mac": "BB:BB", "name": "Gone", "available": False},
+        ],
+    )
+
+    def fake_get_info(mac):
+        return {"alias": mac, "class": "0x0000", "paired": False, "connected": False}
+
+    monkeypatch.setattr(app, "get_info", fake_get_info)
+    monkeypatch.setattr(app, "is_audio_capable", lambda info: True)
+
+    data = app.api_devices()
+    avail = {d["mac"]: d["available"] for d in data["devices"]}
+    assert avail["AA:AA"] is True
+    assert avail["BB:BB"] is False

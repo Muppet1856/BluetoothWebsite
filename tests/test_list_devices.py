@@ -32,11 +32,20 @@ spec.loader.exec_module(app)
 
 
 def test_list_devices_includes_paired(monkeypatch):
+    calls = []
+
     def fake_run_bctl(cmds, timeout=30):
-        assert "devices" in cmds
-        assert "paired-devices" in cmds
-        return 0, "Device AA:BB:CC:DD:EE:FF MySpeaker\n", ""
+        calls.append(cmds)
+        if cmds == ["devices"]:
+            return 0, "Device AA:BB:CC:DD:EE:FF MySpeaker\n", ""
+        elif cmds == ["paired-devices"]:
+            return 0, "Device 11:22:33:44:55:66 Old\n", ""
+        raise AssertionError(f"unexpected cmds: {cmds}")
 
     monkeypatch.setattr(app, "run_bctl", fake_run_bctl)
     devices = app.list_devices()
-    assert devices == [{"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker", "type": None}]
+    assert devices == [
+        {"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker", "type": None, "available": True},
+        {"mac": "11:22:33:44:55:66", "name": "Old", "type": None, "available": False},
+    ]
+    assert calls == [["devices"], ["paired-devices"]]
