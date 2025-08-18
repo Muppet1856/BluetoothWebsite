@@ -404,7 +404,16 @@ def github_webhook():
     if request.headers.get("X-GitHub-Event") == "push":
         script = os.environ.get("GITHUB_WEBHOOK_SCRIPT", DEFAULT_WEBHOOK_SCRIPT)
         try:
-            subprocess.Popen(["bash", script])
+            result = subprocess.run(
+                ["bash", script], capture_output=True, text=True
+            )
+            payload = {
+                "ok": result.returncode == 0,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+            }
+            code = 200 if result.returncode == 0 else 500
+            return jsonify(payload), code
         except Exception as exc:
             return jsonify({"ok": False, "error": str(exc)}), 500
     return jsonify({"ok": True})
