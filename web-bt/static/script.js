@@ -60,7 +60,7 @@ function renderStatus(info) {
   }
   statusArea.innerHTML =
     `${badge('Paired', info.paired)} ${badge('Trusted', info.trusted)} ${badge('Connected', info.connected)}`;
-  connectBtn.disabled    = info.connected || !selectedMac;
+  connectBtn.disabled    = info.connected || !selectedMac || !info.available;
   disconnectBtn.disabled = !info.connected || !selectedMac;
   forgetBtn.disabled     = !selectedMac;
   testAudioBtn.disabled  = !info.connected || !selectedMac;
@@ -127,6 +127,8 @@ async function refreshDeviceInfo() {
   if (!selectedMac) { renderStatus(null); return; }
   const res = await fetch('/api/info?mac=' + encodeURIComponent(selectedMac));
   const info = await res.json();
+  const dev = devices.find(d => d.mac === selectedMac);
+  info.available = dev ? dev.available : false;
   renderStatus(info);
 
   const idx = devices.findIndex(d => d.mac === selectedMac);
