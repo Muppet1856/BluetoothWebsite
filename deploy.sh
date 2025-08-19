@@ -7,6 +7,9 @@ cd "$(dirname "$0")"
 # Update repo
 git pull --ff-only
 
+# Print the current version
+echo "Deploying version $(cat VERSION)"
+
 # Copy repo to deployment directory
 DEST="/opt/bt-web"
 mkdir -p "$DEST"
