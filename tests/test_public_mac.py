@@ -49,5 +49,6 @@ def test_random_address_replaced_with_identity(monkeypatch):
 
     monkeypatch.setattr(app, "get_info", fake_get_info)
     flask_stub.request.args = {"audio_only": "0"}
+    app.SCAN_STATE["wanted"] = True
     data = app.api_devices()
     assert data["devices"][0]["mac"] == "BB:BB:BB:BB:BB:01"

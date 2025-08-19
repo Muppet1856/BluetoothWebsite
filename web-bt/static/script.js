@@ -161,6 +161,10 @@ scanToggle.addEventListener('click', async () => {
     const turningOn = scanText.textContent.includes("On");
     await fetch(turningOn ? '/api/scan_on' : '/api/scan_off', { method: 'POST' });
     await updateScanUI();
+    if (!turningOn) {
+      await fetchDevices();
+      await refreshDeviceInfo();
+    }
   } finally {
     scanToggle.disabled = false;
   }

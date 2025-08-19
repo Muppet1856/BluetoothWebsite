@@ -333,7 +333,18 @@ def api_devices():
                 print(f"[drop] mac={pub_mac} name={name} class={info.get('class')}")
                 dropped.append({"mac": pub_mac, "name": name, "class": info.get("class")})
     enriched = list(merged.values())
-    enriched.sort(key=lambda x: (not x.get("connected"), not x.get("available"), not x.get("paired"), (x.get("alias") or x.get("name") or "")))
+    enriched.sort(
+        key=lambda x: (
+            not x.get("connected"),
+            not x.get("available"),
+            not x.get("paired"),
+            (x.get("alias") or x.get("name") or ""),
+        )
+    )
+
+    if not SCAN_STATE.get("wanted"):
+        enriched = [d for d in enriched if d.get("paired")]
+
     result = {"devices": enriched}
     if dropped:
         result["dropped"] = dropped
