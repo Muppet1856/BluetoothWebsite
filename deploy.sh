@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Update repo
-git pull --ff-only
+git pull --ff-only origin main
 
 # Print the current version
 echo "Deploying version $(cat VERSION)"
