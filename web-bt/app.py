@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, re, time, atexit, subprocess, hmac, hashlib
+import os, re, time, atexit, subprocess, hmac, hashlib, threading
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
@@ -16,8 +16,9 @@ ADAPTER_BOOL= re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|
 
 # ------------------ State ------------------
 SCAN_STATE = {"wanted": False}
-SCAN_PROC  = {"p": None, "adapter": None}
+SCAN_PROC  = {"p": None, "adapter": None, "t": None}
 ADAPTER_CACHE = {"mac": None, "ts": 0.0}
+LAST_SEEN = {}
 
 # ------------------ Utilities ------------------
 def clean_for_js(text: str) -> str:
@@ -70,24 +71,26 @@ def adapter_status():
     return st
 
 def list_devices():
-    """Return known devices and mark which ones are currently discoverable."""
-    # Start with paired devices marked unavailable by default
+    """Return known devices and mark which ones were recently seen."""
     rc, out, _ = run_bctl(["paired-devices"])
     found = {}
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
             mac, addr_type, name = m.group(1), m.group(2), m.group(3)
-            found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": False}
+            found[mac] = {"mac": mac, "name": name, "type": addr_type}
 
-    # Unpaired devices currently visible in a scan
     rc, out, _ = run_bctl(["devices"])
     for line in out.splitlines():
         m = DEVICE_LINE.match(line.strip())
         if m:
             mac, addr_type, name = m.group(1), m.group(2), m.group(3)
             if mac not in found:
-                found[mac] = {"mac": mac, "name": name, "type": addr_type, "available": True}
+                found[mac] = {"mac": mac, "name": name, "type": addr_type}
+
+    now = time.time()
+    for d in found.values():
+        d["available"] = (now - LAST_SEEN.get(d["mac"], 0)) < 10.0
 
     devices = list(found.values())
     devices.sort(key=lambda d: (not d.get("available", False), d.get("mac")))
@@ -145,6 +148,13 @@ def wait_info(mac, key, want=True, tries=12, delay=0.5):
     return get_info(mac)
 
 # ------------------ Persistent scanner session ------------------
+
+def _scan_reader(pipe):
+    for line in pipe:
+        m = DEVICE_LINE.match(line.strip())
+        if m:
+            LAST_SEEN[m.group(1)] = time.time()
+
 def _start_persistent_scan():
     if SCAN_PROC["p"] and SCAN_PROC["p"].poll() is None:
         return
@@ -152,13 +162,16 @@ def _start_persistent_scan():
     p = subprocess.Popen(
         ["bluetoothctl"],
         stdin=subprocess.PIPE,
-        stdout=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
         text=True,
         bufsize=1
     )
     SCAN_PROC["p"] = p
     SCAN_PROC["adapter"] = adapter
+    t = threading.Thread(target=_scan_reader, args=(p.stdout,), daemon=True)
+    t.start()
+    SCAN_PROC["t"] = t
     init = []
     if adapter: init.append(f"select {adapter}")
     init += ["power on", "agent NoInputNoOutput", "default-agent", "pairable on", "scan on"]
@@ -183,7 +196,7 @@ def _persistent_write(lines):
 
 def _stop_persistent_scan():
     p = SCAN_PROC.get("p")
-    SCAN_PROC["p"] = None; SCAN_PROC["adapter"] = None
+    SCAN_PROC["p"] = None; SCAN_PROC["adapter"] = None; SCAN_PROC["t"] = None
     if not p: return
     try:
         if p.poll() is None:
