@@ -30,7 +30,7 @@ BOOL_LINE   = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
 ADAPTER_BOOL= re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|no)$", re.I)
 
 # ------------------ State ------------------
-SCAN_STATE = {"wanted": False}
+SCAN_STATE = {"wanted": False, "start_ts": 0}
 SCAN_PROC  = {"p": None, "adapter": None, "t": None}
 ADAPTER_CACHE = {"mac": None, "ts": 0.0}
 LAST_SEEN = {}
@@ -90,7 +90,7 @@ def adapter_status():
     return st
 
 def list_devices():
-    """Return known devices and mark which ones were recently seen."""
+    """Return known Bluetooth devices."""
     rc, out, _ = run_bctl(["paired-devices"])
     found = {}
     for line in out.splitlines():
@@ -107,12 +107,8 @@ def list_devices():
             if mac not in found:
                 found[mac] = {"mac": mac, "name": name, "type": addr_type}
 
-    now = time.time()
-    for d in found.values():
-        d["available"] = (now - LAST_SEEN.get(d["mac"], 0)) < 10.0
-
     devices = list(found.values())
-    devices.sort(key=lambda d: (not d.get("available", False), d.get("mac")))
+    devices.sort(key=lambda d: d.get("mac"))
     return devices
 
 def get_info(mac):
@@ -318,10 +314,12 @@ def bctl_connect_wait(mac, wait_s=8):
 @app.post("/api/scan_on")
 def api_scan_on():
     SCAN_STATE["wanted"] = True
+    SCAN_STATE["start_ts"] = time.time()
     try:
         _start_persistent_scan()
     except Exception:
         SCAN_STATE["wanted"] = False
+        SCAN_STATE["start_ts"] = 0
         return jsonify({"ok": False, "status": {}, "log": ""})
     time.sleep(0.5)
     return jsonify({"ok": True, "status": adapter_status(), "log": ""})
@@ -329,6 +327,7 @@ def api_scan_on():
 @app.post("/api/scan_off")
 def api_scan_off():
     SCAN_STATE["wanted"] = False
+    SCAN_STATE["start_ts"] = 0
     _stop_persistent_scan()
     time.sleep(0.3)
     return jsonify({"ok": True, "status": adapter_status(), "log": ""})
@@ -347,11 +346,15 @@ def api_devices():
     dropped = []
     for d in base:
         info = get_info(d["mac"])
+        if d.get("type") == "random" and not info.get("identity"):
+            continue
+        start_ts = SCAN_STATE.get("start_ts", 0) if SCAN_STATE.get("wanted") else 0
+        if SCAN_STATE.get("wanted") and not info.get("paired") and LAST_SEEN.get(d["mac"], 0) < start_ts:
+            continue
         pub_mac = info.get("identity") or d["mac"]
         name = info.get("alias") or d.get("name") or ""
         audio_ok = is_audio_capable(info)
         device = {**d, **info, "alias": info.get("alias"), "mac": pub_mac}
-        device["available"] = d.get("available", False)
         if (not audio_only) or audio_ok or info.get("paired") or info.get("connected"):
             existing = merged.get(pub_mac)
             if existing:
@@ -366,14 +369,14 @@ def api_devices():
     enriched.sort(
         key=lambda x: (
             not x.get("connected"),
-            not x.get("available"),
             not x.get("paired"),
+            not x.get("trusted"),
             (x.get("alias") or x.get("name") or ""),
         )
     )
 
     if not SCAN_STATE.get("wanted"):
-        enriched = [d for d in enriched if d.get("paired")]
+        enriched = [d for d in enriched if d.get("paired") and d.get("trusted")]
 
     result = {"devices": enriched}
     if dropped:

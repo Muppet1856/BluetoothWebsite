@@ -59,28 +59,30 @@ def test_api_devices_logs_dropped(monkeypatch, capsys):
     assert "0x1234" in out
 
 
-def test_api_devices_includes_available(monkeypatch):
+def test_devices_seen_since_scan_start(monkeypatch):
     flask_stub.request.args = {"audio_only": "0"}
     app.SCAN_STATE["wanted"] = True
+    app.SCAN_STATE["start_ts"] = 100
+    monkeypatch.setattr(app, "LAST_SEEN", {"AA:AA": 150, "BB:BB": 50})
     monkeypatch.setattr(
         app,
         "list_devices",
         lambda: [
-            {"mac": "AA:AA", "name": "Seen", "available": True},
-            {"mac": "BB:BB", "name": "Gone", "available": False},
+            {"mac": "AA:AA", "name": "New", "type": "public"},
+            {"mac": "BB:BB", "name": "Old", "type": "public"},
         ],
     )
 
     def fake_get_info(mac):
-        return {"alias": mac, "class": "0x0000", "paired": False, "connected": False}
+        return {"alias": mac, "class": "0x0000", "paired": False, "connected": False, "trusted": False}
 
     monkeypatch.setattr(app, "get_info", fake_get_info)
     monkeypatch.setattr(app, "is_audio_capable", lambda info: True)
 
     data = app.api_devices()
-    avail = {d["mac"]: d["available"] for d in data["devices"]}
-    assert avail["AA:AA"] is True
-    assert avail["BB:BB"] is False
+    macs = [d["mac"] for d in data["devices"]]
+    assert "AA:AA" in macs
+    assert "BB:BB" not in macs
 
 
 def test_unpaired_removed_when_scan_off(monkeypatch):
@@ -89,7 +91,7 @@ def test_unpaired_removed_when_scan_off(monkeypatch):
     monkeypatch.setattr(app, "list_devices", lambda: [{"mac": "CC:CC", "name": "Tmp"}])
 
     def fake_get_info(mac):
-        return {"alias": "Tmp", "class": "0x0000", "paired": False, "connected": False}
+        return {"alias": "Tmp", "class": "0x0000", "paired": True, "trusted": False, "connected": False}
 
     monkeypatch.setattr(app, "get_info", fake_get_info)
     monkeypatch.setattr(app, "is_audio_capable", lambda info: True)

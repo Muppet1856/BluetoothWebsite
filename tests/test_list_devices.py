@@ -1,7 +1,6 @@
 import importlib.util
 import sys
 import types
-import time
 from pathlib import Path
 
 # Minimal Flask stub
@@ -47,10 +46,9 @@ def test_list_devices_includes_paired(monkeypatch):
         raise AssertionError(f"unexpected cmds: {cmds}")
 
     monkeypatch.setattr(app, "run_bctl", fake_run_bctl)
-    monkeypatch.setattr(app, "LAST_SEEN", {"AA:BB:CC:DD:EE:FF": time.time()})
     devices = app.list_devices()
     assert devices == [
-        {"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker", "type": None, "available": True},
-        {"mac": "11:22:33:44:55:66", "name": "Old", "type": None, "available": False},
+        {"mac": "11:22:33:44:55:66", "name": "Old", "type": None},
+        {"mac": "AA:BB:CC:DD:EE:FF", "name": "MySpeaker", "type": None},
     ]
     assert calls == [["paired-devices"], ["devices"]]
