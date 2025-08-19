@@ -121,6 +121,7 @@ async function fetchDevices() {
   const data = await res.json();
   devices = data.devices || [];
   renderList();
+  await refreshDeviceInfo();
 }
 
 async function refreshDeviceInfo() {
@@ -163,7 +164,6 @@ scanToggle.addEventListener('click', async () => {
     await updateScanUI();
     if (!turningOn) {
       await fetchDevices();
-      await refreshDeviceInfo();
     }
   } finally {
     scanToggle.disabled = false;
@@ -253,7 +253,6 @@ refreshBtn.addEventListener('click', async () => {
   refreshBtn.disabled = true;
   try {
     await fetchDevices();
-    await refreshDeviceInfo();
   } finally {
     refreshBtn.disabled = false;
   }
@@ -262,7 +261,6 @@ refreshBtn.addEventListener('click', async () => {
 audioOnlyChk.addEventListener('change', async () => {
   audioOnly = audioOnlyChk.checked;
   await fetchDevices();
-  await refreshDeviceInfo();
 });
 
 // Copy / Clear log
@@ -294,7 +292,6 @@ copyLogBtn?.addEventListener('click', async () => {
   try {
     await updateScanUI();
     await fetchDevices();
-    await refreshDeviceInfo();
   } catch (e) {
     showLogRAW(String(e));
   }
