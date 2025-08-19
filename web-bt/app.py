@@ -34,6 +34,10 @@ SCAN_STATE = {"wanted": False}
 SCAN_PROC  = {"p": None, "adapter": None, "t": None}
 ADAPTER_CACHE = {"mac": None, "ts": 0.0}
 LAST_SEEN = {}
+# Cache for mapping a scanned address to its corresponding identity address.
+# This avoids repeatedly invoking `get_info` for the same MAC on every line of
+# scan output. Values are tuples of (identity_mac, timestamp).
+IDENTITY_CACHE = {}
 
 # ------------------ Utilities ------------------
 def clean_for_js(text: str) -> str:
@@ -167,8 +171,30 @@ def wait_info(mac, key, want=True, tries=12, delay=0.5):
 def _scan_reader(pipe):
     for line in pipe:
         m = DEVICE_LINE.match(line.strip())
-        if m:
-            LAST_SEEN[m.group(1)] = time.time()
+        if not m:
+            continue
+        mac = m.group(1)
+        now = time.time()
+        LAST_SEEN[mac] = now
+
+        # Resolve the public/identity address for devices that advertise with a
+        # temporary random address. Cache lookups to avoid excessive
+        # bluetoothctl calls when the same address appears repeatedly in the
+        # scan output.
+        cached = IDENTITY_CACHE.get(mac)
+        pub = None
+        if cached and now - cached[1] < 5.0:
+            pub = cached[0]
+        else:
+            try:
+                info = get_info(mac)
+                pub = info.get("identity")
+            except Exception:
+                pub = None
+            IDENTITY_CACHE[mac] = (pub, now)
+
+        if pub:
+            LAST_SEEN[pub] = now
 
 def _start_persistent_scan():
     if SCAN_PROC["p"] and SCAN_PROC["p"].poll() is None:
