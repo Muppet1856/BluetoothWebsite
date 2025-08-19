@@ -250,8 +250,13 @@ testAudioBtn.addEventListener('click', async () => {
 });
 
 refreshBtn.addEventListener('click', async () => {
-  await fetchDevices();
-  await refreshDeviceInfo();
+  refreshBtn.disabled = true;
+  try {
+    await fetchDevices();
+    await refreshDeviceInfo();
+  } finally {
+    refreshBtn.disabled = false;
+  }
 });
 
 audioOnlyChk.addEventListener('change', async () => {
