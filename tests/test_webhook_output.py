@@ -44,3 +44,19 @@ def test_webhook_returns_script_output(monkeypatch):
     resp, code = app.github_webhook()
     assert code == 200
     assert resp == {"ok": True, "stdout": "deploy ok\n", "stderr": ""}
+
+
+def test_webhook_handles_script_failure(monkeypatch):
+    def fake_run(cmd, *a, **k):
+        assert cmd == ["bash", app.DEFAULT_WEBHOOK_SCRIPT]
+        class Dummy:
+            returncode = 1
+            stdout = ""
+            stderr = "boom\n"
+        return Dummy()
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+    req = types.SimpleNamespace(headers={"X-GitHub-Event": "push"}, data=b"")
+    monkeypatch.setattr(app, "request", req)
+    resp, code = app.github_webhook()
+    assert code == 200
+    assert resp == {"ok": False, "stdout": "", "stderr": "boom\n"}
