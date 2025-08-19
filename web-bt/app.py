@@ -170,7 +170,11 @@ def wait_info(mac, key, want=True, tries=12, delay=0.5):
 
 def _scan_reader(pipe):
     for line in pipe:
-        m = DEVICE_LINE.match(line.strip())
+        # bluetoothctl prefixes scan lines with markers like "[NEW]" or
+        # "[CHG]". Using ``search`` instead of ``match`` lets us extract the
+        # MAC address regardless of any leading tag so RSSI updates still bump
+        # the availability timestamp for known devices.
+        m = DEVICE_LINE.search(line)
         if not m:
             continue
         mac = m.group(1)
