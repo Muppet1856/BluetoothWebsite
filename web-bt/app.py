@@ -25,7 +25,7 @@ DEFAULT_WEBHOOK_SCRIPT = os.path.abspath(
 )
 
 # ------------------ Regex ------------------
-DEVICE_LINE = re.compile(r"^Device ([0-9A-F:]{17})(?: \((random|public)\))? (.+)$")
+DEVICE_LINE = re.compile(r"Device ([0-9A-F:]{17})(?: \((random|public)\))? (.+)$")
 BOOL_LINE   = re.compile(r"^(Paired|Trusted|Connected):\s+(yes|no)$", re.I)
 ADAPTER_BOOL= re.compile(r"^(Powered|Discoverable|Pairable|Discovering):\s+(yes|no)$", re.I)
 
