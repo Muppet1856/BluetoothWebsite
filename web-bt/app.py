@@ -1,8 +1,23 @@
 #!/usr/bin/env python3
 import os, re, time, atexit, subprocess, hmac, hashlib, threading
+import logging
+from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, render_template
 
 app = Flask(__name__)
+
+# Configure file logging for debug purposes
+if hasattr(app, "logger"):
+    log_path = os.path.join(os.path.dirname(__file__), "app.log")
+    try:
+        handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=3)
+        handler.setLevel(logging.DEBUG)
+        fmt = "%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"
+        handler.setFormatter(logging.Formatter(fmt))
+        app.logger.addHandler(handler)
+        app.logger.setLevel(logging.DEBUG)
+    except Exception:
+        pass
 
 # Default script to run for GitHub webhook events
 DEFAULT_WEBHOOK_SCRIPT = os.path.abspath(
@@ -431,21 +446,30 @@ def api_forget():
 
 @app.post("/github-webhook")
 def github_webhook():
+    event = request.headers.get("X-GitHub-Event")
+    if hasattr(app, "logger"):
+        app.logger.debug("GitHub webhook event: %s", event)
     secret = os.environ.get("GITHUB_WEBHOOK_SECRET")
     if secret:
         signature = request.headers.get("X-Hub-Signature-256", "")
         if not signature.startswith("sha256="):
+            if hasattr(app, "logger"):
+                app.logger.warning("Webhook missing sha256 signature")
             return jsonify({"ok": False, "error": "invalid signature"}), 400
         sig = signature.split("=", 1)[1]
         mac = hmac.new(secret.encode(), request.data, hashlib.sha256)
         if not hmac.compare_digest(mac.hexdigest(), sig):
+            if hasattr(app, "logger"):
+                app.logger.warning("Webhook bad signature")
             return jsonify({"ok": False, "error": "bad signature"}), 403
-    if request.headers.get("X-GitHub-Event") == "push":
+    if event == "push":
         script = os.environ.get("GITHUB_WEBHOOK_SCRIPT", DEFAULT_WEBHOOK_SCRIPT)
         try:
             result = subprocess.run(
                 ["bash", script], capture_output=True, text=True
             )
+            if hasattr(app, "logger"):
+                app.logger.info("Webhook script exited %s", result.returncode)
             payload = {
                 "ok": result.returncode == 0,
                 "stdout": result.stdout,
@@ -454,6 +478,8 @@ def github_webhook():
             code = 200 if result.returncode == 0 else 500
             return jsonify(payload), code
         except Exception as exc:
+            if hasattr(app, "logger"):
+                app.logger.exception("Webhook script failed")
             return jsonify({"ok": False, "error": str(exc)}), 500
     return jsonify({"ok": True})
 
