@@ -516,8 +516,7 @@ def github_webhook():
                 "stdout": result.stdout,
                 "stderr": result.stderr,
             }
-            code = 200 if result.returncode == 0 else 500
-            return jsonify(payload), code
+            return jsonify(payload), 200
         except Exception as exc:
             if hasattr(app, "logger"):
                 app.logger.exception("Webhook script failed")
