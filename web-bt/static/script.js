@@ -41,15 +41,8 @@ function badge(label, ok, yes='Yes', no='No') {
 
 function deviceStateBadge(d) {
   if (d.connected) return '<span class="badge text-bg-success">Connected</span>';
-  if (d.paired)    return '<span class="badge text-bg-info">Paired</span>';
+  if (d.paired && d.trusted) return '<span class="badge text-bg-info">Paired</span>';
   return '<span class="badge text-bg-secondary">New</span>';
-}
-
-function availabilityBadge(d) {
-  if (d.connected) return "";
-  return d.available
-    ? '<span class="badge text-bg-success ms-1">Available</span>'
-    : '<span class="badge text-bg-secondary ms-1">Unavailable</span>';
 }
 
 function renderStatus(info) {
@@ -60,9 +53,9 @@ function renderStatus(info) {
   }
   statusArea.innerHTML =
     `${badge('Paired', info.paired)} ${badge('Trusted', info.trusted)} ${badge('Connected', info.connected)}`;
-  connectBtn.disabled    = info.connected || !selectedMac || !info.available;
+  connectBtn.disabled    = info.connected || !selectedMac;
   disconnectBtn.disabled = !info.connected || !selectedMac;
-  forgetBtn.disabled     = !selectedMac;
+  forgetBtn.disabled     = !(info.paired || info.trusted) || !selectedMac;
   testAudioBtn.disabled  = !info.connected || !selectedMac;
 }
 
@@ -83,7 +76,7 @@ function renderList() {
         <div class="fw-semibold">${alias}</div>
         <div class="badge text-bg-secondary rounded-pill mac">${d.mac}</div>${identityLink}
       </div>
-      <div>${deviceStateBadge(d)} ${availabilityBadge(d)}</div>
+      <div>${deviceStateBadge(d)}</div>
     `;
     if (d.mac === selectedMac) item.classList.add('active');
     item.addEventListener('click', async () => {
@@ -128,8 +121,6 @@ async function refreshDeviceInfo() {
   if (!selectedMac) { renderStatus(null); return; }
   const res = await fetch('/api/info?mac=' + encodeURIComponent(selectedMac));
   const info = await res.json();
-  const dev = devices.find(d => d.mac === selectedMac);
-  info.available = dev ? dev.available : false;
   renderStatus(info);
 
   const idx = devices.findIndex(d => d.mac === selectedMac);
