@@ -195,18 +195,20 @@ The app can listen for GitHub webhooks and trigger a local script on each push.
 
    `http://<Host IP>:8080/github-webhook`
 
-2. Set a **secret** for the webhook and export it before starting the app:
+2. Generate a secret by hashing a passphrase (SHA-256). The installer will
+   prompt for the passphrase and print the resulting hash. Use that hash in the
+   GitHub webhook settings or compute it manually:
 
    ```bash
-   export GITHUB_WEBHOOK_SECRET="<your-secret>"
+   printf '%s' 'your-passphrase' | sha256sum | cut -d' ' -f1
    ```
 
-   If the app runs as a systemd service, add the secret to the unit file instead:
+   If the app runs as a systemd service, add the hash to the unit file instead:
 
    ```ini
    # /etc/systemd/system/bt-web.service
    [Service]
-   Environment=GITHUB_WEBHOOK_SECRET=<your-secret>
+   Environment=GITHUB_WEBHOOK_SECRET=<your-hash>
    ```
 
    Then reload and restart:
