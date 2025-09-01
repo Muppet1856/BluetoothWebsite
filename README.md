@@ -15,13 +15,24 @@ Open it from any browser on your LAN.
 
 ---
 
-## Quick install (curl | bash)
+## Quick install
 
-To set up the Bluetooth Web UI on a fresh Raspberry Pi in one command:
+To set up the Bluetooth Web UI on a fresh Raspberry Pi, run the installer script. If you pipe it directly into `sudo bash`, the script's `read` commands can't prompt you for a GitHub webhook passphrase. Use one of the methods below to keep the prompts interactive.
+
+**Download then run:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Muppet1856/BluetoothWebsite/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Muppet1856/BluetoothWebsite/main/install.sh -o install.sh
+sudo bash install.sh
 ```
+
+**Run inline while keeping input:**
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/Muppet1856/BluetoothWebsite/main/install.sh)"
+```
+
+When prompted for a GitHub webhook passphrase, enter the same passphrase twice. Press **Enter** twice to skip. A mismatch exits with `Error: passphrases do not match`.
 
 The script updates packages, installs dependencies, clones this repo to `/opt/bt-web`, creates the `bt-web` user, installs the systemd unit, and starts the service.
 
