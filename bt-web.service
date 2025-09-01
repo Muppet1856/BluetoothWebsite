@@ -13,8 +13,10 @@ User=bt-web
 Group=bt-web
 Environment=PYTHONUNBUFFERED=1
 Environment=PORT=8080
-# Uncomment to enable GitHub webhook auto-deploy
-# Environment=GITHUB_WEBHOOK_SECRET=your-secret
+# Uncomment to enable GitHub webhook auto-deploy. Create a passphrase and hash it
+# (SHA-256) with:
+#   printf '%s' 'your-passphrase' | sha256sum | cut -d' ' -f1
+# Environment=GITHUB_WEBHOOK_SECRET=your-hash
 
 [Install]
 WantedBy=multi-user.target
