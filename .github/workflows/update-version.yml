@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main  # Adjust to your branch (e.g., master, develop)
+      - WiFi---AP
 
 jobs:
   update-version:
