@@ -18,10 +18,12 @@ const apSsid = document.getElementById('apSsid');
 const apSsidBtn = document.getElementById('apSsidBtn');
 const scanWifiBtn = document.getElementById('scanWifiBtn');
 const wifiList = document.getElementById('wifiList');
+const versionEl  = document.getElementById('version');
 
 // --- ANSI renderer (client-side) ---
 if (window.APP_VERSION) {
   console.debug('App version:', window.APP_VERSION);
+  if (versionEl) versionEl.textContent = window.APP_VERSION.slice(0, 7);
 }
 const ansi = new AnsiToHtml();          // from CDN in index.html
 let lastLogRaw = "";                    // plain text for "Copy" button
