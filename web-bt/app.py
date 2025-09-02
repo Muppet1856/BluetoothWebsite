@@ -4,7 +4,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, render_template
 sys.path.append(os.path.dirname(__file__))
-from wifi import read_ap_ssid, set_ap_ssid, list_client_networks, connect_client
+from wifi import (
+    read_ap_ssid,
+    set_ap_ssid,
+    list_client_networks,
+    connect_client,
+    get_client_ip_info,
+)
 
 app = Flask(__name__)
 
@@ -521,6 +527,11 @@ def api_wifi_connect():
         return jsonify({"ok": True, "ssid": ssid})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.get("/api/wifi_info")
+def api_wifi_info():
+    return jsonify(get_client_ip_info())
 
 @app.post("/github-webhook")
 def github_webhook():
