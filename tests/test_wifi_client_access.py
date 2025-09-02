@@ -51,8 +51,13 @@ def test_api_ap_set(monkeypatch):
 
 
 def test_api_wifi_list(monkeypatch):
-    monkeypatch.setattr(app, "list_client_networks", lambda: ["a", "b"])
-    assert app.api_wifi_list() == {"networks": ["a", "b"]}
+    monkeypatch.setattr(app, "list_client_networks", lambda: (["a", "b"], True))
+    assert app.api_wifi_list() == {"networks": ["a", "b"], "has_wifi": True}
+
+
+def test_api_wifi_list_no_iface(monkeypatch):
+    monkeypatch.setattr(app, "list_client_networks", lambda: ([], False))
+    assert app.api_wifi_list() == {"networks": [], "has_wifi": False}
 
 
 def test_api_wifi_connect(monkeypatch):

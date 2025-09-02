@@ -508,8 +508,8 @@ def api_ap_set():
 
 @app.get("/api/wifi")
 def api_wifi_list():
-    nets = list_client_networks()
-    return jsonify({"networks": nets})
+    nets, has_iface = list_client_networks()
+    return jsonify({"networks": nets, "has_wifi": has_iface})
 
 @app.post("/api/wifi")
 def api_wifi_connect():
