@@ -6,8 +6,11 @@ echo "Running as $(whoami)"
 cd "$(dirname "$0")"
 
 # Update repo
-echo "Updating repository..."
-git pull --ff-only origin main
+BRANCH="${1:-main}"
+echo "Updating repository on branch $BRANCH..."
+git fetch origin "$BRANCH"
+git checkout "$BRANCH" || git checkout -b "$BRANCH" "origin/$BRANCH"
+git pull --ff-only origin "$BRANCH"
 
 # Print the current version
 echo "Deploying version $(cat VERSION)"
