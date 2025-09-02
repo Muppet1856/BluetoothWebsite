@@ -287,7 +287,12 @@ async function scanWifi(){
     const res = await fetch('/api/wifi');
     const data = await res.json();
     const nets = data.networks || [];
-    if (nets.length === 0){
+    if (data.has_wifi === false) {
+      const li=document.createElement('li');
+      li.className='list-group-item text-danger';
+      li.textContent='No Wi-Fi interface detected';
+      wifiList.appendChild(li);
+    } else if (nets.length === 0){
       const li=document.createElement('li');
       li.className='list-group-item text-secondary';
       li.textContent='No networks';

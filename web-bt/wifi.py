@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import List
+from typing import List, Tuple
 
 AP_CONF = "/etc/hostapd/hostapd.conf"
 AP_INTERFACE = "wlan0"
@@ -48,7 +48,8 @@ def set_ap_ssid(ssid: str) -> None:
         pass
 
 
-def list_client_networks() -> List[str]:
+def list_client_networks() -> Tuple[List[str], bool]:
+    """Return available client SSIDs and whether a Wi-Fi interface exists."""
     try:
         p = subprocess.run(
             ["nmcli", "-t", "-f", "SSID", "device", "wifi", "list"],
@@ -57,11 +58,13 @@ def list_client_networks() -> List[str]:
             text=True,
             check=False,
         )
+        has_iface = "No Wi-Fi device" not in (p.stderr or "")
         nets = [line.strip() for line in p.stdout.splitlines() if line.strip()]
     except Exception:
+        has_iface = False
         nets = []
     ap_ssid = read_ap_ssid()
-    return [n for n in nets if n != ap_ssid]
+    return [n for n in nets if n != ap_ssid], has_iface
 
 
 def connect_client(ssid: str) -> None:
