@@ -285,8 +285,16 @@ async function updateWifiInfo(){
   try{
     const res = await fetch('/api/wifi_info');
     const data = await res.json();
-    if (data.ip){
-      wifiInfo.textContent = `IP: ${data.ip}/${data.mask || '?'}, GW: ${data.gateway || '?'}`;
+    const ifaces = Object.keys(data || {});
+    if (ifaces.length){
+      const parts = [];
+      ifaces.forEach(iface => {
+        const info = data[iface] || {};
+        if (info.ip){
+          parts.push(`${iface}: ${info.ip}/${info.mask || '?'}, GW: ${info.gateway || '?'}`);
+        }
+      });
+      wifiInfo.textContent = parts.join(' | ') || 'No IP address';
     } else {
       wifiInfo.textContent = 'No IP address';
     }

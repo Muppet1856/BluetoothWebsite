@@ -78,12 +78,20 @@ def test_api_wifi_info(monkeypatch):
     monkeypatch.setattr(
         app,
         "get_client_ip_info",
-        lambda: {"ip": "1.2.3.4", "mask": "255.255.255.0", "gateway": "1.2.3.1"},
+        lambda: {
+            "wlan0": {
+                "ip": "1.2.3.4",
+                "mask": "255.255.255.0",
+                "gateway": "1.2.3.1",
+            }
+        },
     )
     assert app.api_wifi_info() == {
-        "ip": "1.2.3.4",
-        "mask": "255.255.255.0",
-        "gateway": "1.2.3.1",
+        "wlan0": {
+            "ip": "1.2.3.4",
+            "mask": "255.255.255.0",
+            "gateway": "1.2.3.1",
+        }
     }
 
 
