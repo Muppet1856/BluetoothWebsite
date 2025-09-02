@@ -77,3 +77,51 @@ def connect_client(ssid: str) -> None:
         )
     except Exception:
         pass
+
+
+def get_client_ip_info() -> dict:
+    """Return IP address, subnet mask and gateway for the Wi-Fi interface."""
+    info = {"ip": None, "mask": None, "gateway": None}
+    try:
+        p = subprocess.run(
+            ["ip", "-4", "addr", "show", AP_INTERFACE],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        for line in p.stdout.splitlines():
+            line = line.strip()
+            if line.startswith("inet "):
+                addr = line.split()[1]  # e.g. 192.168.1.5/24
+                ip, prefix = addr.split("/")
+                info["ip"] = ip
+                try:
+                    import ipaddress
+
+                    info["mask"] = str(
+                        ipaddress.IPv4Network("0.0.0.0/" + prefix).netmask
+                    )
+                except Exception:
+                    info["mask"] = None
+                break
+    except Exception:
+        pass
+
+    try:
+        p = subprocess.run(
+            ["ip", "route", "show", "default", "dev", AP_INTERFACE],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        for line in p.stdout.splitlines():
+            parts = line.strip().split()
+            if parts and parts[0] == "default" and "via" in parts:
+                info["gateway"] = parts[parts.index("via") + 1]
+                break
+    except Exception:
+        pass
+
+    return info

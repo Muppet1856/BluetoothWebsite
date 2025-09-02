@@ -74,9 +74,23 @@ def test_api_wifi_connect(monkeypatch):
     assert called["ssid"] == "Net1"
 
 
+def test_api_wifi_info(monkeypatch):
+    monkeypatch.setattr(
+        app,
+        "get_client_ip_info",
+        lambda: {"ip": "1.2.3.4", "mask": "255.255.255.0", "gateway": "1.2.3.1"},
+    )
+    assert app.api_wifi_info() == {
+        "ip": "1.2.3.4",
+        "mask": "255.255.255.0",
+        "gateway": "1.2.3.1",
+    }
+
+
 def test_index_contains_wifi_controls():
     index = Path(__file__).resolve().parents[1] / "web-bt" / "templates" / "index.html"
     html = index.read_text()
     assert 'id="apSsid"' in html
     assert 'id="scanWifiBtn"' in html
     assert 'id="wifiList"' in html
+    assert 'id="wifiInfo"' in html

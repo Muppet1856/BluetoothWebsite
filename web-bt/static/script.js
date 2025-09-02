@@ -18,6 +18,7 @@ const apSsid = document.getElementById('apSsid');
 const apSsidBtn = document.getElementById('apSsidBtn');
 const scanWifiBtn = document.getElementById('scanWifiBtn');
 const wifiList = document.getElementById('wifiList');
+const wifiInfo = document.getElementById('wifiInfo');
 const versionEl  = document.getElementById('version');
 
 // --- ANSI renderer (client-side) ---
@@ -280,6 +281,20 @@ async function setAp(){
   }
 }
 
+async function updateWifiInfo(){
+  try{
+    const res = await fetch('/api/wifi_info');
+    const data = await res.json();
+    if (data.ip){
+      wifiInfo.textContent = `IP: ${data.ip}/${data.mask || '?'}, GW: ${data.gateway || '?'}`;
+    } else {
+      wifiInfo.textContent = 'No IP address';
+    }
+  } catch(e){
+    wifiInfo.textContent = 'No IP address';
+  }
+}
+
 async function scanWifi(){
   scanWifiBtn.disabled = true;
   wifiList.innerHTML = '';
@@ -313,6 +328,7 @@ async function scanWifi(){
 
 async function connectWifi(ssid){
   await fetch('/api/wifi', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ssid})});
+  await updateWifiInfo();
 }
 // Copy / Clear log
 clearLogBtn?.addEventListener('click', () => showLogRAW(""));
@@ -347,6 +363,7 @@ scanWifiBtn?.addEventListener('click', scanWifi);
     await updateScanUI();
     await fetchDevices();
     await loadAp();
+    await updateWifiInfo();
   } catch (e) {
     showLogRAW(String(e));
   }
