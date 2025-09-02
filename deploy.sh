@@ -6,7 +6,9 @@ echo "Running as $(whoami)"
 cd "$(dirname "$0")"
 
 # Update repo
-BRANCH="${1:-main}"
+# Branch priority: 1) argument, 2) GitHub Actions vars, 3) default to main
+BRANCH="${1:-${GITHUB_REF_NAME:-${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}}}"
+BRANCH="${BRANCH:-main}"
 echo "Updating repository on branch $BRANCH..."
 git fetch origin "$BRANCH"
 git checkout "$BRANCH" || git checkout -b "$BRANCH" "origin/$BRANCH"
