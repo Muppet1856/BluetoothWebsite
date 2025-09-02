@@ -234,7 +234,8 @@ The app can listen for GitHub webhooks and trigger a local script on each push.
    export GITHUB_WEBHOOK_SCRIPT="/path/to/your/script.sh"
    ```
 
-On each push, the script executes in the background, allowing simple auto-deployments.
+On each push, the script executes in the background with the branch name as its
+first argument, allowing simple auto-deployments.
 
 ---
 

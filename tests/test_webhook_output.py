@@ -32,14 +32,17 @@ spec.loader.exec_module(app)
 
 def test_webhook_returns_script_output(monkeypatch):
     def fake_run(cmd, *a, **k):
-        assert cmd == ["bash", app.DEFAULT_WEBHOOK_SCRIPT]
+        assert cmd == ["bash", app.DEFAULT_WEBHOOK_SCRIPT, "feature"]
         class Dummy:
             returncode = 0
             stdout = "deploy ok\n"
             stderr = ""
         return Dummy()
     monkeypatch.setattr(app.subprocess, "run", fake_run)
-    req = types.SimpleNamespace(headers={"X-GitHub-Event": "push"}, data=b"")
+    req = types.SimpleNamespace(
+        headers={"X-GitHub-Event": "push"},
+        data=b'{"ref":"refs/heads/feature"}'
+    )
     monkeypatch.setattr(app, "request", req)
     resp, code = app.github_webhook()
     assert code == 200
@@ -48,14 +51,17 @@ def test_webhook_returns_script_output(monkeypatch):
 
 def test_webhook_handles_script_failure(monkeypatch):
     def fake_run(cmd, *a, **k):
-        assert cmd == ["bash", app.DEFAULT_WEBHOOK_SCRIPT]
+        assert cmd == ["bash", app.DEFAULT_WEBHOOK_SCRIPT, "feature"]
         class Dummy:
             returncode = 1
             stdout = ""
             stderr = "boom\n"
         return Dummy()
     monkeypatch.setattr(app.subprocess, "run", fake_run)
-    req = types.SimpleNamespace(headers={"X-GitHub-Event": "push"}, data=b"")
+    req = types.SimpleNamespace(
+        headers={"X-GitHub-Event": "push"},
+        data=b'{"ref":"refs/heads/feature"}'
+    )
     monkeypatch.setattr(app, "request", req)
     resp, code = app.github_webhook()
     assert code == 200

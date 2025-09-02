@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, re, time, atexit, subprocess, hmac, hashlib, threading, sys
+import os, re, time, atexit, subprocess, hmac, hashlib, threading, sys, json
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, render_template
@@ -542,9 +542,16 @@ def github_webhook():
             return jsonify({"ok": False, "error": "bad signature"}), 403
     if event == "push":
         script = os.environ.get("GITHUB_WEBHOOK_SCRIPT", DEFAULT_WEBHOOK_SCRIPT)
+        payload = {}
+        try:
+            payload = json.loads(request.data.decode()) if request.data else {}
+        except Exception:
+            payload = {}
+        ref = payload.get("ref", "")
+        branch = ref.split("/", 2)[-1] if ref.startswith("refs/heads/") else "main"
         try:
             result = subprocess.run(
-                ["bash", script], capture_output=True, text=True
+                ["bash", script, branch], capture_output=True, text=True
             )
             if hasattr(app, "logger"):
                 app.logger.info("Webhook script exited %s", result.returncode)
