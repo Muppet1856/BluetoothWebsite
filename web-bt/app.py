@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-import os, re, time, atexit, subprocess, hmac, hashlib, threading
+import os, re, time, atexit, subprocess, hmac, hashlib, threading, sys
 import logging
 from logging.handlers import RotatingFileHandler
 from flask import Flask, jsonify, request, render_template
+sys.path.append(os.path.dirname(__file__))
+from wifi import read_ap_ssid, set_ap_ssid, list_client_networks, connect_client
 
 app = Flask(__name__)
 
@@ -487,6 +489,38 @@ def api_forget():
     txt = f"\x1b[1m== remove\x1b[0m\n{out}{err}"
     # Best-effort result; devices list will reflect reality
     return jsonify({"ok": True, "log": clean_for_js(txt)})
+
+
+@app.get("/api/ap")
+def api_ap_get():
+    return jsonify({"ssid": read_ap_ssid()})
+
+@app.post("/api/ap")
+def api_ap_set():
+    ssid = (request.json or {}).get("ssid", "")
+    if not ssid:
+        return jsonify({"ok": False, "error": "ssid required"}), 400
+    try:
+        set_ap_ssid(ssid)
+        return jsonify({"ok": True, "ssid": ssid})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.get("/api/wifi")
+def api_wifi_list():
+    nets = list_client_networks()
+    return jsonify({"networks": nets})
+
+@app.post("/api/wifi")
+def api_wifi_connect():
+    ssid = (request.json or {}).get("ssid", "")
+    if not ssid:
+        return jsonify({"ok": False, "error": "ssid required"}), 400
+    try:
+        connect_client(ssid)
+        return jsonify({"ok": True, "ssid": ssid})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 @app.post("/github-webhook")
 def github_webhook():

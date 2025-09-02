@@ -63,6 +63,31 @@
       </div>
     </div>
 
+    <!-- Row: Wi-Fi configuration -->
+    <div class="row g-3 mt-1">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header"><strong>Wi-Fi</strong></div>
+          <div class="card-body d-grid gap-3">
+            <div>
+              <label for="apSsid" class="form-label">Access Point SSID</label>
+              <div class="input-group">
+                <input id="apSsid" class="form-control" type="text" placeholder="AP SSID">
+                <button id="apSsidBtn" class="btn btn-primary" type="button">Set</button>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0">Client Networks</label>
+                <button id="scanWifiBtn" class="btn btn-outline-secondary btn-sm" type="button">Scan</button>
+              </div>
+              <ul id="wifiList" class="list-group" style="max-height:12rem; overflow:auto;"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Row 2: Full-width Log -->
     <div class="row g-3 mt-1">
       <div class="col-12">
