@@ -14,6 +14,10 @@ const countEl      = document.getElementById('count');
 const logBox       = document.getElementById('logBox');
 const audioOnlyChk = document.getElementById('audioOnly');
 const testAudioBtn = document.getElementById('testAudioBtn');
+const apSsid = document.getElementById('apSsid');
+const apSsidBtn = document.getElementById('apSsidBtn');
+const scanWifiBtn = document.getElementById('scanWifiBtn');
+const wifiList = document.getElementById('wifiList');
 
 // --- ANSI renderer (client-side) ---
 if (window.APP_VERSION) {
@@ -254,6 +258,55 @@ audioOnlyChk.addEventListener('change', async () => {
   await fetchDevices();
 });
 
+
+async function loadAp(){
+  try {
+    const res = await fetch('/api/ap');
+    const data = await res.json();
+    if (apSsid) apSsid.value = data.ssid || '';
+  } catch(e) {}
+}
+
+async function setAp(){
+  const ssid = apSsid.value.trim();
+  if (!ssid) return;
+  apSsidBtn.disabled = true;
+  try {
+    await fetch('/api/ap', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ssid})});
+  } finally {
+    apSsidBtn.disabled = false;
+  }
+}
+
+async function scanWifi(){
+  scanWifiBtn.disabled = true;
+  wifiList.innerHTML = '';
+  try {
+    const res = await fetch('/api/wifi');
+    const data = await res.json();
+    const nets = data.networks || [];
+    if (nets.length === 0){
+      const li=document.createElement('li');
+      li.className='list-group-item text-secondary';
+      li.textContent='No networks';
+      wifiList.appendChild(li);
+    } else {
+      nets.forEach(n => {
+        const li=document.createElement('li');
+        li.className='list-group-item list-group-item-action';
+        li.textContent=n;
+        li.addEventListener('click', ()=>connectWifi(n));
+        wifiList.appendChild(li);
+      });
+    }
+  } finally {
+    scanWifiBtn.disabled = false;
+  }
+}
+
+async function connectWifi(ssid){
+  await fetch('/api/wifi', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ssid})});
+}
 // Copy / Clear log
 clearLogBtn?.addEventListener('click', () => showLogRAW(""));
 copyLogBtn?.addEventListener('click', async () => {
@@ -278,11 +331,15 @@ copyLogBtn?.addEventListener('click', async () => {
 });
 
 
+apSsidBtn?.addEventListener('click', setAp);
+scanWifiBtn?.addEventListener('click', scanWifi);
+
 // --- Init ---
 (async function init() {
   try {
     await updateScanUI();
     await fetchDevices();
+    await loadAp();
   } catch (e) {
     showLogRAW(String(e));
   }
